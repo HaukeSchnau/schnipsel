@@ -162,23 +162,56 @@ export function clampCrop(crop: Crop, rect: Rect, imageAspect: number): Crop {
   };
 }
 
-/** Topmost layer under a point, or null. Rotation is undone before testing. */
-export function hitTest(collage: Collage, canvas: Size, px: number, py: number): Layer | null {
+/**
+ * A layer reduced to what a hit test needs. Precomputed in JS so the same test
+ * can run inside a gesture worklet, where the collage itself is not available.
+ */
+export type HitBox = {
+  id: string;
+  cx: number;
+  cy: number;
+  hw: number;
+  hh: number;
+  sin: number;
+  cos: number;
+};
+
+export function layerHitBoxes(collage: Collage, canvas: Size): HitBox[] {
   const content = contentRect(collage, canvas);
   const gut = gutter(collage, canvas);
-  for (let i = collage.layers.length - 1; i >= 0; i--) {
-    const layer = collage.layers[i];
-    const rect = layerRect(layer.frame, content, gut);
-    const cx = rect.x + rect.w / 2;
-    const cy = rect.y + rect.h / 2;
-    const a = (-layerAngle(layer, collage.scatter) * Math.PI) / 180;
-    const dx = px - cx;
-    const dy = py - cy;
-    const lx = dx * Math.cos(a) - dy * Math.sin(a);
-    const ly = dx * Math.sin(a) + dy * Math.cos(a);
-    if (Math.abs(lx) <= rect.w / 2 && Math.abs(ly) <= rect.h / 2) return layer;
+  return collage.layers.map((layer) => {
+    const box = layerRect(layer.frame, content, gut);
+    const angle = (layerAngle(layer, collage.scatter) * Math.PI) / 180;
+    return {
+      id: layer.id,
+      cx: box.x + box.w / 2,
+      cy: box.y + box.h / 2,
+      hw: box.w / 2,
+      hh: box.h / 2,
+      sin: Math.sin(angle),
+      cos: Math.cos(angle),
+    };
+  });
+}
+
+/** Id of the topmost box under a point, or null. Safe to call on the UI thread. */
+export function pickAt(boxes: HitBox[], px: number, py: number): string | null {
+  'worklet';
+  for (let i = boxes.length - 1; i >= 0; i--) {
+    const b = boxes[i];
+    const dx = px - b.cx;
+    const dy = py - b.cy;
+    const lx = dx * b.cos + dy * b.sin;
+    const ly = -dx * b.sin + dy * b.cos;
+    if (Math.abs(lx) <= b.hw && Math.abs(ly) <= b.hh) return b.id;
   }
   return null;
+}
+
+/** Topmost layer under a point, or null. */
+export function hitTest(collage: Collage, canvas: Size, px: number, py: number): Layer | null {
+  const id = pickAt(layerHitBoxes(collage, canvas), px, py);
+  return collage.layers.find((l) => l.id === id) ?? null;
 }
 
 export function canvasSize(collage: Collage): Size {

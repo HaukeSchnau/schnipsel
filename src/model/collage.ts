@@ -140,3 +140,27 @@ export function emptyCollage(id: string): Collage {
     updatedAt: Date.now(),
   };
 }
+
+/**
+ * Trades two photos between their frames.
+ *
+ * The crop travels with the photo, not with the frame: it was chosen to show
+ * this photo well, and the frames a layout generates usually differ in shape,
+ * so keeping the crop behind would re-cut both photos at once.
+ */
+export function swapPhotos(collage: Collage, aId: string, bId: string): Collage {
+  if (aId === bId) return collage;
+  const a = collage.layers.find((l) => l.id === aId);
+  const b = collage.layers.find((l) => l.id === bId);
+  if (!a || !b) return collage;
+  return {
+    ...collage,
+    layers: collage.layers.map((layer) =>
+      layer.id === aId
+        ? { ...layer, photoId: b.photoId, crop: b.crop }
+        : layer.id === bId
+          ? { ...layer, photoId: a.photoId, crop: a.crop }
+          : layer
+    ),
+  };
+}

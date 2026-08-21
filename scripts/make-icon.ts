@@ -11,6 +11,14 @@
  * the kind of thing you only notice once it is on a phone.
  *
  *   bun scripts/make-icon.ts <output-dir>
+ *
+ * The SVGs are rasterised separately, because this machine has no fonts of its
+ * own and the splash carries a line of text:
+ *
+ *   FONT=$(nix build nixpkgs#eb-garamond --no-link --print-out-paths)
+ *   nix run nixpkgs#resvg -- --use-font-file \
+ *     "$FONT/share/fonts/opentype/EBGaramond12-Italic.otf" \
+ *     --width 900 out/splash.svg assets/splash-icon.png
  */
 const SIZE = 1024;
 /** Radius every launcher mask is guaranteed to keep. */
@@ -90,6 +98,29 @@ ${defs}${background ? `<rect width="${SIZE}" height="${SIZE}" fill="${background
 ${body}
 </svg>`;
 
+/** The dedication on the launch screen. The whole point of a gift app. */
+const DEDICATION = 'für Janelle';
+
+/**
+ * The splash is the icon motif with a line under it. expo-splash-screen centres
+ * this image on a solid background, so the canvas is cropped tight — any empty
+ * space here would just push the text further from the prints.
+ */
+function splash(): string {
+  const prints = fit(1.0);
+  const top = Math.min(...prints.map((p) => p.cy - Math.hypot(p.w, p.h) / 2));
+  const bottom = Math.max(...prints.map((p) => p.cy + Math.hypot(p.w, p.h) / 2));
+  const pad = 40;
+  const textY = bottom + 130;
+  const height = textY + pad + 30;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${height.toFixed(0)}" viewBox="0 ${(top - pad).toFixed(0)} ${SIZE} ${height.toFixed(0)}">
+${DROP}
+${colourScene(prints, 30)}
+<text x="${SIZE / 2}" y="${textY.toFixed(0)}" text-anchor="middle" font-family="EB Garamond"
+      font-style="italic" font-size="82" fill="#F3EDE3" opacity="0.92">${DEDICATION}</text>
+</svg>`;
+}
+
 const out = process.argv[2] ?? './icon';
 
 const worst = Math.max(...ADAPTIVE.map(reach));
@@ -101,6 +132,7 @@ if (worst > SAFE) {
 await Bun.write(`${out}/icon.svg`, svg(colourScene(SQUARE, 30), BG, DROP));
 await Bun.write(`${out}/adaptive-foreground.svg`, svg(colourScene(ADAPTIVE, 26), null, DROP));
 await Bun.write(`${out}/adaptive-monochrome.svg`, svg(monoScene(ADAPTIVE, 12), null));
+await Bun.write(`${out}/splash.svg`, splash());
 
 console.log(`geschrieben nach ${out}`);
 console.log(`sichere Zone Radius ${SAFE.toFixed(0)}px, Motiv reicht bis ${worst.toFixed(0)}px`);

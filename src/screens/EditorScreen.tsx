@@ -13,7 +13,7 @@ import { Canvas } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
 
-import type { Collage, Layer, Photo } from '../model/collage';
+import { swapPhotos, type Collage, type Layer, type Photo } from '../model/collage';
 import {
   borderWidth,
   canvasSize,
@@ -24,7 +24,9 @@ import {
   hitTest,
   imageDestRect,
   insetRect,
+  layerHitBoxes,
   layerRect,
+  pickAt,
   rectToFrame,
 } from '../model/geometry';
 import { CollageScene, type LiveTransform } from '../render/CollageScene';
@@ -62,11 +64,18 @@ export function EditorScreen({
   const [selected, setSelected] = useState<Selection>(null);
   const [showSafeZone, setShowSafeZone] = useState(true);
   const [showSliders, setShowSliders] = useState(false);
+  /** Long-press-and-drag in progress. */
+  const [swap, setSwap] = useState<{ sourceId: string; targetId: string | null } | null>(null);
   const [palette, setPalette] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [available, setAvailable] = useState({ width: 0, height: 0 });
 
   const live = useSharedValue<LiveTransform>(null);
+  /** The photo being dragged, and the frame currently under the finger. Held on
+   *  the UI thread so hit testing during a drag never crosses to JS, and so the
+   *  callback only fires when the target actually changes. */
+  const sourceForSwap = useSharedValue<string | null>(null);
+  const swapTarget = useSharedValue<string | null>(null);
   /** Pan and pinch can run together; only the last one to finish commits. */
   const activeGestures = useSharedValue(0);
 
@@ -104,6 +113,7 @@ export function EditorScreen({
     }));
     const activeBox = boxes.find((b) => b.layer.id === selected?.id)?.box ?? null;
     const border = borderWidth(collage, preview);
+    const hitBoxes = layerHitBoxes(collage, preview);
     const targets: SnapTargets = {
       vertical: [content.x, content.x + content.w / 2, content.x + content.w],
       horizontal: [content.y, content.y + content.h / 2, content.y + content.h],
@@ -113,7 +123,7 @@ export function EditorScreen({
       targets.vertical.push(box.x, box.x + box.w / 2, box.x + box.w);
       targets.horizontal.push(box.y, box.y + box.h / 2, box.y + box.h);
     }
-    return { content, gut, activeBox, targets, border };
+    return { content, gut, activeBox, targets, border, hitBoxes };
   }, [collage, preview, selected?.id]);
 
   const commit = useCallback(
@@ -182,6 +192,27 @@ export function EditorScreen({
     [apply, collage, preview]
   );
 
+  const beginSwap = useCallback((id: string) => {
+    tick();
+    setSwap({ sourceId: id, targetId: null });
+  }, []);
+
+  const hoverSwap = useCallback((id: string | null) => {
+    tick();
+    setSwap((current) => (current ? { ...current, targetId: id } : current));
+  }, []);
+
+  const finishSwap = useCallback(
+    (sourceId: string, targetId: string | null) => {
+      setSwap(null);
+      swapTarget.value = null;
+      if (!targetId || targetId === sourceId) return;
+      tick();
+      apply((current) => swapPhotos(current, sourceId, targetId));
+    },
+    [apply, swapTarget]
+  );
+
   const gesture = useMemo(() => {
     const target = selected;
     const box = geometry?.activeBox;
@@ -244,8 +275,55 @@ export function EditorScreen({
         runOnJS(handleTap)(e.x, e.y);
       });
 
-    return Gesture.Simultaneous(pan, pinch, Gesture.Exclusive(doubleTap, tap));
-  }, [activeGestures, commit, geometry, handleDoubleTap, handleTap, live, preview.width, selected]);
+    // Hold, then drag, to trade two photos between their frames. Pan activates
+    // on movement and this one only after a hold, so they never both fire.
+    const boxes = geometry?.hitBoxes ?? [];
+    const swapDrag = Gesture.Pan()
+      .activateAfterLongPress(350)
+      .onStart((e) => {
+        'worklet';
+        const id = pickAt(boxes, e.x, e.y);
+        if (!id) return;
+        sourceForSwap.value = id;
+        swapTarget.value = id;
+        runOnJS(beginSwap)(id);
+      })
+      .onUpdate((e) => {
+        'worklet';
+        if (!sourceForSwap.value) return;
+        const id = pickAt(boxes, e.x, e.y);
+        if (id !== swapTarget.value) {
+          swapTarget.value = id;
+          runOnJS(hoverSwap)(id);
+        }
+      })
+      .onFinalize(() => {
+        'worklet';
+        const source = sourceForSwap.value;
+        sourceForSwap.value = null;
+        if (source) runOnJS(finishSwap)(source, swapTarget.value);
+      });
+
+    return Gesture.Simultaneous(
+      Gesture.Exclusive(swapDrag, pan),
+      pinch,
+      Gesture.Exclusive(doubleTap, tap)
+    );
+  }, [
+    activeGestures,
+    beginSwap,
+    commit,
+    finishSwap,
+    geometry,
+    handleDoubleTap,
+    handleTap,
+    hoverSwap,
+    live,
+    preview.width,
+    selected,
+    sourceForSwap,
+    swapTarget,
+  ]);
 
   const exportCollage = useCallback(async () => {
     setBusy(true);
@@ -327,7 +405,9 @@ export function EditorScreen({
               : 'Rahmen: schieben und zoomen · nochmal tippen für den Ausschnitt'}
           </Text>
         ) : (
-          <Text style={styles.hint}>Tippe ein Bild an, um es anzupassen</Text>
+          <Text style={styles.hint}>
+            Tippen zum Anpassen · lange drücken und ziehen, um zwei Bilder zu tauschen
+          </Text>
         )}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>

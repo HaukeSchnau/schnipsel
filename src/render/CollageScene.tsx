@@ -64,6 +64,8 @@ export type CollageSceneProps = {
   /** Editor only. Omit for a static render such as the export. */
   live?: SharedValue<LiveTransform>;
   selectedId?: string | null;
+  /** Long-press-and-drag in progress: which photo is moving, and where to. */
+  swap?: { sourceId: string | null; targetId: string | null };
   /** Dims the strips Instagram covers with its own UI. */
   showSafeZone?: boolean;
 };
@@ -75,6 +77,7 @@ export function CollageScene({
   size,
   live,
   selectedId,
+  swap,
   showSafeZone,
 }: CollageSceneProps) {
   const content = contentRect(collage, size);
@@ -138,27 +141,63 @@ export function CollageScene({
         );
       })}
 
-      {selectedId
-        ? (() => {
-            const layer = collage.layers.find((l) => l.id === selectedId);
-            if (!layer) return null;
-            const box = layerRect(layer.frame, content, gut);
-            return (
-              <RoundedRect
-                rect={rrect(rect(box.x, box.y, box.w, box.h), cornerRadius(collage.radius, box), cornerRadius(collage.radius, box))}
-                style="stroke"
-                strokeWidth={Math.max(1.5, size.width * 0.004)}
-                color="#F7E7CE"
-                origin={{ x: box.x + box.w / 2, y: box.y + box.h / 2 }}
-                transform={[{ rotate: (layerAngle(layer, collage.scatter) * Math.PI) / 180 }]}
-              />
-            );
-          })()
-        : null}
+      {selectedId && !swap?.sourceId ? (
+        <LayerMarker collage={collage} layerId={selectedId} size={size} kind="selection" />
+      ) : null}
+
+      {swap?.sourceId ? (
+        <LayerMarker collage={collage} layerId={swap.sourceId} size={size} kind="source" />
+      ) : null}
+      {swap?.targetId && swap.targetId !== swap.sourceId ? (
+        <LayerMarker collage={collage} layerId={swap.targetId} size={size} kind="target" />
+      ) : null}
 
       {/* Independent of `respectSafeZone`: the guide matters most when the
           collage *does* run under Instagram's bars. */}
       {showSafeZone ? <SafeZone size={size} /> : null}
+    </Group>
+  );
+}
+
+/**
+ * Editor-only overlay marking a layer: the current selection, the photo being
+ * dragged, or the slot it would land in. Drawn from the collage rather than
+ * passed a rect so it always lines up with what the layer itself did.
+ */
+function LayerMarker({
+  collage,
+  layerId,
+  size,
+  kind,
+}: {
+  collage: Collage;
+  layerId: string;
+  size: Size;
+  kind: 'selection' | 'source' | 'target';
+}) {
+  const layer = collage.layers.find((l) => l.id === layerId);
+  if (!layer) return null;
+  const content = contentRect(collage, size);
+  const box = layerRect(layer.frame, content, gutter(collage, size));
+  const radius = cornerRadius(collage.radius, box);
+  const shape = rrect(rect(box.x, box.y, box.w, box.h), radius, radius);
+  const transform: Transforms3d = [
+    { rotate: (layerAngle(layer, collage.scatter) * Math.PI) / 180 },
+  ];
+  const origin = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+  const stroke = Math.max(1.5, size.width * (kind === 'selection' ? 0.004 : 0.008));
+
+  return (
+    <Group transform={transform} origin={origin}>
+      {kind === 'target' ? (
+        <RoundedRect rect={shape} color="rgba(247,231,206,0.3)" />
+      ) : null}
+      <RoundedRect
+        rect={shape}
+        style="stroke"
+        strokeWidth={stroke}
+        color={kind === 'source' ? 'rgba(247,231,206,0.55)' : '#F7E7CE'}
+      />
     </Group>
   );
 }
