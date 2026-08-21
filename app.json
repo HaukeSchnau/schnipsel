@@ -1,17 +1,20 @@
 {
   "expo": {
-    "name": "schnipsel",
+    "name": "Schnipsel",
     "slug": "schnipsel",
+    "scheme": "schnipsel",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#12100E",
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "dev.schnau.schnipsel",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#12100E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +23,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-image",
+      [
+        "expo-media-library",
+        {
+          "granularPermissions": ["photo"],
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
+    ]
   }
 }

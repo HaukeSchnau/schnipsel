@@ -1,6 +1,10 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    // The pure model code is tested with `bun test`. Expo's base config sets
+    // customConditions, which stops @types/bun from being picked up
+    // automatically, so `bun:test` has to be named here explicitly.
+    "types": ["bun"]
   }
 }
