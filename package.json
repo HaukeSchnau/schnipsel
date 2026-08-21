@@ -32,5 +32,8 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
-  "private": true
+  "private": true,
+  "trustedDependencies": [
+    "@shopify/react-native-skia"
+  ]
 }
