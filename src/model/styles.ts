@@ -9,7 +9,7 @@
  */
 import type { Collage } from './collage';
 
-export type StyleName = 'randlos' | 'kante' | 'passepartout' | 'schuhkarton';
+export type StyleName = 'randlos' | 'kante' | 'passepartout' | 'abzuege' | 'schuhkarton';
 
 /** Warm off-white. Pure #FFF reads as a blown-out highlight next to photos. */
 const PAPER = '#F3EDE3';
@@ -18,7 +18,7 @@ type Style = {
   label: string;
   /** What it's for, in the one line that fits under a chip. */
   hint: string;
-  settings: Pick<Collage, 'gap' | 'margin' | 'radius' | 'scatter'> & {
+  settings: Pick<Collage, 'gap' | 'margin' | 'radius' | 'border' | 'shadow' | 'scatter'> & {
     background: Collage['background'];
   };
 };
@@ -31,6 +31,8 @@ export const STYLES: Record<StyleName, Style> = {
       gap: 0,
       margin: 0,
       radius: 0,
+      border: 0,
+      shadow: 0,
       scatter: 0,
       background: { kind: 'color', color: PAPER },
     },
@@ -42,6 +44,8 @@ export const STYLES: Record<StyleName, Style> = {
       gap: 0.08,
       margin: 0,
       radius: 0,
+      border: 0,
+      shadow: 0,
       scatter: 0,
       background: { kind: 'color', color: PAPER },
     },
@@ -53,24 +57,47 @@ export const STYLES: Record<StyleName, Style> = {
       gap: 0.35,
       margin: 0.5,
       radius: 0,
+      border: 0,
+      shadow: 0,
+      scatter: 0,
+      background: { kind: 'color', color: PAPER },
+    },
+  },
+  abzuege: {
+    label: 'Abzüge',
+    hint: 'Weiss gerahmte Abzüge, ausgerichtet',
+    settings: {
+      gap: 0.3,
+      margin: 0.28,
+      radius: 0.01,
+      border: 0.55,
+      shadow: 0.32,
       scatter: 0,
       background: { kind: 'color', color: PAPER },
     },
   },
   schuhkarton: {
     label: 'Schuhkarton',
-    hint: 'Lose Abzüge, leicht schief',
+    hint: 'Lose Abzüge, hingeworfen',
     settings: {
-      gap: 0.55,
-      margin: 0.3,
-      radius: 0.015,
-      scatter: 0.45,
+      gap: 0.5,
+      margin: 0.22,
+      radius: 0.01,
+      border: 0.7,
+      shadow: 0.68,
+      scatter: 0.5,
       background: { kind: 'color', color: PAPER },
     },
   },
 };
 
-export const STYLE_ORDER: StyleName[] = ['randlos', 'kante', 'passepartout', 'schuhkarton'];
+export const STYLE_ORDER: StyleName[] = [
+  'randlos',
+  'kante',
+  'passepartout',
+  'abzuege',
+  'schuhkarton',
+];
 
 /** Applies a style, leaving layers and the safe-zone choice alone. */
 export function applyStyle(collage: Collage, name: StyleName): Collage {
@@ -86,6 +113,8 @@ export function currentStyle(collage: Collage): StyleName | null {
         collage.gap === s.gap &&
         collage.margin === s.margin &&
         collage.radius === s.radius &&
+        collage.border === s.border &&
+        collage.shadow === s.shadow &&
         collage.scatter === s.scatter
       );
     }) ?? null

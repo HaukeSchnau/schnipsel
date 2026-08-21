@@ -139,6 +139,7 @@ function rank(collage: Collage, photos: Photo[]): Suggestion[] {
   const content = contentRect(collage, canvas);
   return suggestLayouts(
     photos.map((p) => p.width / p.height),
-    content.w / content.h
+    content.w / content.h,
+    { overlapping: collage.border > 0 }
   );
 }

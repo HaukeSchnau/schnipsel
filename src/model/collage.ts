@@ -58,6 +58,14 @@ export type Collage = {
   margin: number;
   /** 0 = square corners, 1 = fully rounded. */
   radius: number;
+  /**
+   * White paper border around each photo, like a print. Together with `shadow`
+   * this is what makes a photo read as a physical object lying on something —
+   * without it, a rotated or overlapping photo just looks like a crooked grid.
+   */
+  border: number;
+  /** Drop shadow under each photo. 0 = flat. */
+  shadow: number;
   /** 0 = accurate, 1 = shoebox of loose prints. */
   scatter: number;
   /** Keep layers clear of Instagram's own top and bottom bars. */
@@ -97,6 +105,8 @@ export const MAX_GAP = 0.05;
 export const MAX_MARGIN = 0.12;
 /** Largest scatter angle in degrees at `scatter === 1`. */
 export const MAX_SCATTER_DEG = 7;
+/** Widest paper border, as a fraction of the short edge. */
+export const MAX_BORDER = 0.035;
 
 export const DEFAULT_CROP: Crop = { fit: 'cover', scale: 1, offsetX: 0, offsetY: 0 };
 
@@ -122,6 +132,8 @@ export function emptyCollage(id: string): Collage {
     gap: 0.08,
     margin: 0,
     radius: 0,
+    border: 0,
+    shadow: 0,
     scatter: 0,
     respectSafeZone: false,
     canvas: 'story',

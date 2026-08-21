@@ -13,18 +13,31 @@
  * sees, so this costs nothing in fidelity.
  */
 import type { ReactNode } from 'react';
-import { Blur, Fill, Group, Image, rect, rrect, Rect, RoundedRect } from '@shopify/react-native-skia';
+import {
+  Blur,
+  Fill,
+  Group,
+  Image,
+  rect,
+  rrect,
+  Rect,
+  RoundedRect,
+  Shadow,
+} from '@shopify/react-native-skia';
 import type { SkImage, Transforms3d } from '@shopify/react-native-skia';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 
 import { SAFE_ZONE, type Collage, type Layer, type Photo, type Size } from '../model/collage';
 import {
+  borderWidth,
   contentRect,
   cornerRadius,
   gutter,
   imageDestRect,
+  insetRect,
   layerAngle,
   layerRect,
+  shadowSpec,
 } from '../model/geometry';
 import type { ImageMap } from './images';
 
@@ -39,6 +52,9 @@ export type LiveTransform = {
 } | null;
 
 const IDENTITY: Transforms3d = [];
+
+/** The paper a print is on. Slightly warm — pure white glares next to photos. */
+const PAPER = '#FBF8F2';
 
 export type CollageSceneProps = {
   collage: Collage;
@@ -63,6 +79,8 @@ export function CollageScene({
 }: CollageSceneProps) {
   const content = contentRect(collage, size);
   const gut = gutter(collage, size);
+  const border = borderWidth(collage, size);
+  const shadow = shadowSpec(collage, size);
   const background = collage.background;
   const backgroundImage = background.kind === 'photo' ? images[background.photoId] : undefined;
 
@@ -106,6 +124,8 @@ export function CollageScene({
             box={box}
             radius={radius}
             angle={angle}
+            border={border}
+            shadow={shadow}
             live={live}
           />
         );
@@ -174,6 +194,8 @@ function LayerBody({
   box,
   radius,
   angle,
+  border,
+  shadow,
   live,
 }: {
   layer: Layer;
@@ -181,25 +203,44 @@ function LayerBody({
   box: { x: number; y: number; w: number; h: number };
   radius: number;
   angle: number;
+  border: number;
+  shadow: { blur: number; dy: number; opacity: number };
   live?: SharedValue<LiveTransform>;
 }) {
-  const dest = imageDestRect(image.width() / image.height(), box, layer.crop);
+  // The photo sits inside the paper, so everything about it — how it fills the
+  // frame, where it is clipped — is measured against the inner rect.
+  const inner = border > 0 ? insetRect(box, border) : box;
+  const innerRadius = Math.max(0, radius - border);
+  const dest = imageDestRect(image.width() / image.height(), inner, layer.crop);
   const centre = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
+  const card = rrect(rect(box.x, box.y, box.w, box.h), radius, radius);
   const photo = <Image image={image} fit="fill" x={dest.x} y={dest.y} width={dest.w} height={dest.h} />;
 
   return (
-    <Group
-      transform={[{ rotate: (angle * Math.PI) / 180 }]}
-      origin={centre}
-      clip={rrect(rect(box.x, box.y, box.w, box.h), radius, radius)}
-    >
-      {live ? (
-        <LiveCrop layerId={layer.id} centre={centre} live={live}>
-          {photo}
-        </LiveCrop>
-      ) : (
-        photo
-      )}
+    <Group transform={[{ rotate: (angle * Math.PI) / 180 }]} origin={centre}>
+      {shadow.opacity > 0 ? (
+        // `shadowOnly` so the black source rect never shows through the
+        // antialiased edge of the photo drawn over it.
+        <RoundedRect rect={card} color="black">
+          <Shadow
+            dx={0}
+            dy={shadow.dy}
+            blur={shadow.blur}
+            color={`rgba(0,0,0,${shadow.opacity.toFixed(3)})`}
+            shadowOnly
+          />
+        </RoundedRect>
+      ) : null}
+      {border > 0 ? <RoundedRect rect={card} color={PAPER} /> : null}
+      <Group clip={rrect(rect(inner.x, inner.y, inner.w, inner.h), innerRadius, innerRadius)}>
+        {live ? (
+          <LiveCrop layerId={layer.id} centre={centre} live={live}>
+            {photo}
+          </LiveCrop>
+        ) : (
+          photo
+        )}
+      </Group>
     </Group>
   );
 }

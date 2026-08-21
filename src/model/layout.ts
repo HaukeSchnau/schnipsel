@@ -14,16 +14,18 @@
  */
 import { DEFAULT_CROP, type Layer, type Rect } from './collage';
 
-export type Recipe = { id: string; slots: Rect[] };
-
-/**
- * Every recipe tiles the canvas. Overlapping arrangements were tried and
- * dropped: with opaque photos an overlap is invisible — the covered part is
- * simply gone — so it renders identically to a plain split, and the leftover
- * slivers of background read as misalignment rather than intent. Overlap needs
- * a visible edge per photo (a drop shadow or a white border) before it earns
- * its place. See notes/schnipsel.md.
- */
+export type Recipe = {
+  id: string;
+  slots: Rect[];
+  /**
+   * Slots overlap instead of tiling. Only offered when photos have a paper
+   * border and a shadow: with flat opaque rectangles an overlap is invisible
+   * (the covered part is simply gone), so it renders as a plain split with
+   * stray slivers of background that read as misalignment. Give each photo a
+   * visible edge and the same arrangement reads as prints lying on each other.
+   */
+  overlapping?: boolean;
+};
 
 const UNIT: Rect = { x: 0, y: 0, w: 1, h: 1 };
 
@@ -120,6 +122,44 @@ export const RECIPES: Recipe[] = (() => {
     { id: '6/3-2-1', slots: stacked([33, 33, 34], [3, 2, 1]) },
     { id: '6/hero-top', slots: stacked([40, 30, 30], [1, 2, 3]) },
 
+    // Prints laid on top of one another. These need `overlapping` styling to
+    // make any sense — see the flag's docs.
+    {
+      id: '2/aufeinander',
+      overlapping: true,
+      slots: [
+        { x: 0.02, y: 0.04, w: 0.72, h: 0.5 },
+        { x: 0.26, y: 0.46, w: 0.72, h: 0.5 },
+      ],
+    },
+    {
+      id: '3/faecher',
+      overlapping: true,
+      slots: [
+        { x: 0.02, y: 0.03, w: 0.66, h: 0.36 },
+        { x: 0.3, y: 0.32, w: 0.68, h: 0.36 },
+        { x: 0.04, y: 0.61, w: 0.66, h: 0.36 },
+      ],
+    },
+    {
+      id: '3/hero-aufgelegt',
+      overlapping: true,
+      slots: [
+        { x: 0, y: 0, w: 1, h: 0.74 },
+        { x: 0.06, y: 0.58, w: 0.42, h: 0.38 },
+        { x: 0.52, y: 0.64, w: 0.42, h: 0.34 },
+      ],
+    },
+    {
+      id: '4/stapel',
+      overlapping: true,
+      slots: [
+        { x: 0.04, y: 0.02, w: 0.5, h: 0.34 },
+        { x: 0.44, y: 0.22, w: 0.52, h: 0.34 },
+        { x: 0.03, y: 0.44, w: 0.52, h: 0.34 },
+        { x: 0.45, y: 0.63, w: 0.5, h: 0.34 },
+      ],
+    },
   ];
 })();
 
@@ -195,11 +235,18 @@ function genericGrid(count: number): Recipe {
  * a slot that is half as wide as it is tall means something different on a
  * 9:16 story than on a 4:5 post.
  */
-export function suggestLayouts(photoAspects: number[], contentAspect: number): Suggestion[] {
+export function suggestLayouts(
+  photoAspects: number[],
+  contentAspect: number,
+  /** Whether photos currently have the paper edge that overlaps need to read. */
+  { overlapping = false }: { overlapping?: boolean } = {}
+): Suggestion[] {
   const count = photoAspects.length;
   if (count === 0) return [];
 
-  const candidates = RECIPES.filter((r) => r.slots.length === count);
+  const candidates = RECIPES.filter(
+    (r) => r.slots.length === count && (overlapping || !r.overlapping)
+  );
   const recipes = candidates.length > 0 ? candidates : [genericGrid(count)];
   // 6 photos is 720 permutations per recipe — cheap, and above that the search
   // stops paying for itself, so we keep the photos in the order they were tapped.

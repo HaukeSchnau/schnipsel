@@ -11,7 +11,7 @@ import { File, Paths } from 'expo-file-system';
 import type { Collage, Photo } from '../model/collage';
 import { emptyCollage } from '../model/collage';
 
-const DRAFT_VERSION = 2;
+const DRAFT_VERSION = 3;
 const draftFile = new File(Paths.document, 'draft.json');
 
 export type Draft = { version: number; collage: Collage; photos: Photo[] };
@@ -45,34 +45,44 @@ export function loadDraft(): { collage: Collage; photos: Photo[] } | null {
   } catch {
     return null;
   }
-  if (draft.version !== DRAFT_VERSION && draft.version !== 1) return null;
+  if (draft.version < 1 || draft.version > DRAFT_VERSION) return null;
 
   const photos = draft.photos.filter((photo) => new File(photo.uri).exists);
   const available = new Set(photos.map((p) => p.id));
   const layers = draft.collage.layers.filter((layer) => available.has(layer.photoId));
   if (photos.length === 0) return null;
 
-  const collage =
-    draft.version === 1 ? migrateFromV1(draft.collage) : draft.collage;
-  return { collage: { ...collage, layers }, photos };
+  return { collage: { ...migrate(draft.collage, draft.version), layers }, photos };
 }
 
 /**
- * v1 drafts have no `margin`, and their gap/radius/safe-zone values are the old
- * card-grid defaults — the very look this version exists to get rid of. The
- * photos and their arrangement are the work worth keeping, so those carry over
- * and the styling is reset.
+ * Brings an older draft up to date. The photos and their arrangement are the
+ * work worth keeping; styling fields that did not exist yet get today's
+ * defaults.
+ *
+ * v1 is the exception: its gap/radius/safe-zone values are not a choice anyone
+ * made, they are the old card-grid defaults this version exists to get rid of,
+ * so the whole look is reset.
  */
-function migrateFromV1(collage: Collage): Collage {
+function migrate(collage: Collage, version: number): Collage {
   const fresh = emptyCollage(collage.id);
+  if (version === 1) {
+    return {
+      ...collage,
+      gap: fresh.gap,
+      margin: fresh.margin,
+      radius: fresh.radius,
+      border: fresh.border,
+      shadow: fresh.shadow,
+      scatter: fresh.scatter,
+      respectSafeZone: fresh.respectSafeZone,
+      background: fresh.background,
+    };
+  }
   return {
     ...collage,
-    gap: fresh.gap,
-    margin: fresh.margin,
-    radius: fresh.radius,
-    scatter: fresh.scatter,
-    respectSafeZone: fresh.respectSafeZone,
-    background: fresh.background,
+    border: collage.border ?? fresh.border,
+    shadow: collage.shadow ?? fresh.shadow,
   };
 }
 

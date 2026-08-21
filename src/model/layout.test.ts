@@ -6,10 +6,8 @@ import { RECIPES, layersFrom, suggestLayouts } from './layout';
 const STORY = 1080 / 1920;
 
 describe('recipes', () => {
-  test('every recipe tiles the unit square exactly', () => {
+  test('every recipe stays inside the canvas', () => {
     for (const recipe of RECIPES) {
-      const area = recipe.slots.reduce((sum, s) => sum + s.w * s.h, 0);
-      expect(area).toBeCloseTo(1, 6);
       for (const slot of recipe.slots) {
         expect(slot.x).toBeGreaterThanOrEqual(-1e-9);
         expect(slot.y).toBeGreaterThanOrEqual(-1e-9);
@@ -17,6 +15,22 @@ describe('recipes', () => {
         expect(slot.y + slot.h).toBeLessThanOrEqual(1 + 1e-9);
       }
     }
+  });
+
+  test('tiling recipes cover the canvas exactly', () => {
+    for (const recipe of RECIPES.filter((r) => !r.overlapping)) {
+      const area = recipe.slots.reduce((sum, s) => sum + s.w * s.h, 0);
+      expect(area).toBeCloseTo(1, 6);
+    }
+  });
+
+  test('overlapping recipes are only offered when photos have a paper edge', () => {
+    // Flat, they render as a plain split with stray background slivers.
+    const flat = suggestLayouts([1, 1, 1], STORY);
+    expect(flat.some((s) => s.recipe.overlapping)).toBe(false);
+
+    const withPaper = suggestLayouts([1, 1, 1], STORY, { overlapping: true });
+    expect(withPaper.some((s) => s.recipe.overlapping)).toBe(true);
   });
 
   test('recipe ids agree with their slot count', () => {

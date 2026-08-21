@@ -15,6 +15,7 @@ import { runOnJS, useSharedValue } from 'react-native-reanimated';
 
 import type { Collage, Layer, Photo } from '../model/collage';
 import {
+  borderWidth,
   canvasSize,
   clampCrop,
   contentRect,
@@ -22,6 +23,7 @@ import {
   gutter,
   hitTest,
   imageDestRect,
+  insetRect,
   layerRect,
   rectToFrame,
 } from '../model/geometry';
@@ -101,6 +103,7 @@ export function EditorScreen({
       box: layerRect(layer.frame, content, gut),
     }));
     const activeBox = boxes.find((b) => b.layer.id === selected?.id)?.box ?? null;
+    const border = borderWidth(collage, preview);
     const targets: SnapTargets = {
       vertical: [content.x, content.x + content.w / 2, content.x + content.w],
       horizontal: [content.y, content.y + content.h / 2, content.y + content.h],
@@ -110,7 +113,7 @@ export function EditorScreen({
       targets.vertical.push(box.x, box.x + box.w / 2, box.x + box.w);
       targets.horizontal.push(box.y, box.y + box.h / 2, box.y + box.h);
     }
-    return { content, gut, activeBox, targets };
+    return { content, gut, activeBox, targets, border };
   }, [collage, preview, selected?.id]);
 
   const commit = useCallback(
@@ -127,8 +130,18 @@ export function EditorScreen({
         layers: current.layers.map((l) => {
           if (l.id !== layer.id) return l;
           return selected.mode === 'frame'
-            ? commitFrame(l, box, centre, transform, geometry.content, geometry.gut, photosById, images)
-            : commitCrop(l, box, centre, { tx, ty, scale }, photosById, images);
+            ? commitFrame(
+                l,
+                box,
+                centre,
+                transform,
+                geometry.content,
+                geometry.gut,
+                geometry.border,
+                photosById,
+                images
+              )
+            : commitCrop(l, box, centre, { tx, ty, scale }, geometry.border, photosById, images);
         }),
       }));
     },
@@ -360,10 +373,22 @@ export function EditorScreen({
               onCommit={(v) => apply((c) => ({ ...c, gap: v }))}
             />
             <Slider
-              label="Rand"
+              label="Außenrand"
               value={collage.margin}
               onChange={(v) => apply((c) => ({ ...c, margin: v }), { history: false })}
               onCommit={(v) => apply((c) => ({ ...c, margin: v }))}
+            />
+            <Slider
+              label="Bildrand"
+              value={collage.border}
+              onChange={(v) => apply((c) => ({ ...c, border: v }), { history: false })}
+              onCommit={(v) => apply((c) => ({ ...c, border: v }))}
+            />
+            <Slider
+              label="Schatten"
+              value={collage.shadow}
+              onChange={(v) => apply((c) => ({ ...c, shadow: v }), { history: false })}
+              onCommit={(v) => apply((c) => ({ ...c, shadow: v }))}
             />
             <Slider
               label="Rundung"
@@ -408,6 +433,7 @@ function commitFrame(
   { tx, ty, scale }: { tx: number; ty: number; scale: number },
   content: { x: number; y: number; w: number; h: number },
   gut: number,
+  border: number,
   photosById: Record<string, Photo>,
   images: Record<string, { width(): number; height(): number }>
 ): Layer {
@@ -422,7 +448,8 @@ function commitFrame(
   const aspect = image
     ? image.width() / image.height()
     : (photosById[layer.photoId]?.width ?? 1) / (photosById[layer.photoId]?.height ?? 1);
-  return { ...layer, frame, crop: clampCrop(layer.crop, moved, aspect) };
+  // The crop lives inside the paper border, not inside the card.
+  return { ...layer, frame, crop: clampCrop(layer.crop, insetRect(moved, border), aspect) };
 }
 
 /** Applies a finished crop gesture by inverting `imageDestRect`. */
@@ -431,6 +458,7 @@ function commitCrop(
   box: { x: number; y: number; w: number; h: number },
   centre: { x: number; y: number },
   { tx, ty, scale }: { tx: number; ty: number; scale: number },
+  border: number,
   photosById: Record<string, Photo>,
   images: Record<string, { width(): number; height(): number }>
 ): Layer {
@@ -439,18 +467,19 @@ function commitCrop(
     ? image.width() / image.height()
     : (photosById[layer.photoId]?.width ?? 1) / (photosById[layer.photoId]?.height ?? 1);
 
-  const dest = imageDestRect(aspect, box, layer.crop);
+  const inner = insetRect(box, border);
+  const dest = imageDestRect(aspect, inner, layer.crop);
   const movedX = centre.x + (dest.x - centre.x) * scale + tx;
   const movedY = centre.y + (dest.y - centre.y) * scale + ty;
 
   const zoomed = { ...layer.crop, scale: layer.crop.scale * scale, offsetX: 0, offsetY: 0 };
-  const fitted = imageDestRect(aspect, box, zoomed);
+  const fitted = imageDestRect(aspect, inner, zoomed);
   const crop = {
     ...zoomed,
-    offsetX: (movedX - fitted.x) / box.w,
-    offsetY: (movedY - fitted.y) / box.h,
+    offsetX: (movedX - fitted.x) / inner.w,
+    offsetY: (movedY - fitted.y) / inner.h,
   };
-  return { ...layer, crop: clampCrop(crop, box, aspect) };
+  return { ...layer, crop: clampCrop(crop, inner, aspect) };
 }
 
 function IconToggle({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {

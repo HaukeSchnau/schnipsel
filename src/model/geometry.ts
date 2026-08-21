@@ -8,6 +8,7 @@
  */
 import {
   CANVAS_SIZES,
+  MAX_BORDER,
   MAX_GAP,
   MAX_MARGIN,
   MAX_SCATTER_DEG,
@@ -93,6 +94,31 @@ export function layerAngle(layer: Layer, scatter: number): number {
 
 export function cornerRadius(radius: number, rect: Rect): number {
   return (radius * Math.min(rect.w, rect.h)) / 2;
+}
+
+/** Width of the white paper border around each photo, in canvas pixels. */
+export function borderWidth(collage: Collage, canvas: Size): number {
+  return collage.border * MAX_BORDER * Math.min(canvas.width, canvas.height);
+}
+
+/**
+ * Drop shadow parameters in canvas pixels, so a shadow looks the same in the
+ * preview and in the 1080x1920 export.
+ */
+export function shadowSpec(collage: Collage, canvas: Size) {
+  const short = Math.min(canvas.width, canvas.height);
+  return {
+    blur: collage.shadow * 0.026 * short,
+    dy: collage.shadow * 0.010 * short,
+    opacity: collage.shadow * 0.38,
+  };
+}
+
+/** Shrinks a rect on all sides, never past zero size. */
+export function insetRect(rect: Rect, by: number): Rect {
+  const dx = Math.min(by, rect.w / 2 - 0.5);
+  const dy = Math.min(by, rect.h / 2 - 0.5);
+  return { x: rect.x + dx, y: rect.y + dy, w: rect.w - dx * 2, h: rect.h - dy * 2 };
 }
 
 /**

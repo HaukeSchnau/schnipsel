@@ -9,11 +9,14 @@
  */
 import { emptyCollage, type Collage, type Layer, type Size } from '../src/model/collage';
 import {
+  borderWidth,
   contentRect,
   cornerRadius,
   gutter,
+  insetRect,
   layerAngle,
   layerRect,
+  shadowSpec,
 } from '../src/model/geometry';
 import { RECIPES, layersFrom, suggestLayouts } from '../src/model/layout';
 import { applyStyle, STYLES, STYLE_ORDER, type StyleName } from '../src/model/styles';
@@ -22,6 +25,7 @@ const STORY: Size = { width: 1080, height: 1920 };
 const SCALE = 0.15;
 
 const INK = ['#c2643f', '#7d8c5c', '#4a6b7c', '#b08442', '#8a6a86', '#6b7f6b'];
+const PAPER = '#FBF8F2';
 
 function layersFromRecipe(recipeId: string): Layer[] {
   const recipe = RECIPES.find((r) => r.id === recipeId)!;
@@ -38,20 +42,36 @@ function svg(collage: Collage, labels?: string[]): string {
   const h = STORY.height * SCALE;
   const content = contentRect(collage, STORY);
   const gut = gutter(collage, STORY);
+  const bd = borderWidth(collage, STORY);
+  const sh = shadowSpec(collage, STORY);
   const bg = collage.background.kind === 'color' ? collage.background.color : '#333';
+  const shadowId = `sh${Math.round(sh.blur * 100)}-${Math.round(sh.opacity * 100)}`;
+
+  const defs =
+    sh.opacity > 0
+      ? `<defs><filter id="${shadowId}" x="-40%" y="-40%" width="180%" height="180%">
+           <feDropShadow dx="0" dy="${(sh.dy * SCALE).toFixed(2)}"
+             stdDeviation="${((sh.blur * SCALE) / 2).toFixed(2)}"
+             flood-opacity="${sh.opacity.toFixed(3)}" /></filter></defs>`
+      : '';
 
   const cells = collage.layers
     .map((layer, i) => {
-      const r = layerRect(layer.frame, content, gut);
-      const radius = cornerRadius(collage.radius, r);
+      const card = layerRect(layer.frame, content, gut);
+      const inner = bd > 0 ? insetRect(card, bd) : card;
+      const radius = cornerRadius(collage.radius, card);
       const angle = layerAngle(layer, collage.scatter);
-      const cx = (r.x + r.w / 2) * SCALE;
-      const cy = (r.y + r.h / 2) * SCALE;
+      const cx = (card.x + card.w / 2) * SCALE;
+      const cy = (card.y + card.h / 2) * SCALE;
+      const filter = sh.opacity > 0 ? ` filter="url(#${shadowId})"` : '';
+      const box = (r: typeof card, fill: string, rx: number, extra = '') =>
+        `<rect x="${(r.x * SCALE).toFixed(1)}" y="${(r.y * SCALE).toFixed(1)}"
+               width="${(r.w * SCALE).toFixed(1)}" height="${(r.h * SCALE).toFixed(1)}"
+               rx="${(rx * SCALE).toFixed(1)}" fill="${fill}"${extra} />`;
       const label = labels?.[i] ?? String(i + 1);
       return `<g transform="rotate(${angle.toFixed(2)} ${cx.toFixed(1)} ${cy.toFixed(1)})">
-        <rect x="${(r.x * SCALE).toFixed(1)}" y="${(r.y * SCALE).toFixed(1)}"
-              width="${(r.w * SCALE).toFixed(1)}" height="${(r.h * SCALE).toFixed(1)}"
-              rx="${(radius * SCALE).toFixed(1)}" fill="${INK[i % INK.length]}" />
+        ${bd > 0 ? box(card, PAPER, radius, filter) : sh.opacity > 0 ? box(card, INK[i % INK.length], radius, filter) : ''}
+        ${box(inner, INK[i % INK.length], Math.max(0, radius - bd))}
         <text x="${cx.toFixed(1)}" y="${(cy + 4).toFixed(1)}" text-anchor="middle"
               font-family="system-ui" font-size="11" fill="#fff" opacity="0.85">${label}</text>
       </g>`;
@@ -59,7 +79,7 @@ function svg(collage: Collage, labels?: string[]): string {
     .join('\n');
 
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <rect width="${w}" height="${h}" fill="${bg}" />
+    ${defs}<rect width="${w}" height="${h}" fill="${bg}" />
     ${cells}
   </svg>`;
 }
@@ -85,7 +105,9 @@ const MIXES: { label: string; aspects: number[] }[] = [
 function collageForMix(aspects: number[], style: StyleName): Collage {
   const base = applyStyle(emptyCollage('sheet'), style);
   const content = contentRect(base, STORY);
-  const best = suggestLayouts(aspects, content.w / content.h)[0];
+  const best = suggestLayouts(aspects, content.w / content.h, {
+    overlapping: base.border > 0,
+  })[0];
   return { ...base, layers: layersFrom(best, aspects.map((_, i) => `p${i}`)) };
 }
 
@@ -109,8 +131,9 @@ const mixSections = MIXES.map(({ label, aspects }) => {
 }).join('\n');
 
 const recipeSections = RECIPES.map((recipe) => {
-  const collage = { ...applyStyle(emptyCollage('sheet'), 'kante'), layers: layersFromRecipe(recipe.id) };
-  return tile(recipe.id, `${recipe.slots.length} Bilder`, svg(collage));
+  const style: StyleName = recipe.overlapping ? 'schuhkarton' : 'kante';
+  const collage = { ...applyStyle(emptyCollage('sheet'), style), layers: layersFromRecipe(recipe.id) };
+  return tile(recipe.id, recipe.overlapping ? 'überlappend' : `${recipe.slots.length} Bilder`, svg(collage));
 }).join('\n');
 
 const html = `<!DOCTYPE html>
@@ -137,8 +160,8 @@ const html = `<!DOCTYPE html>
 <h1>Schnipsel — Layouts</h1>
 <p class="lead">Gerendert mit denselben Geometriefunktionen wie die App. Story-Format 1080×1920.</p>
 
-<h2>Die vier Stile</h2>
-<p class="note">Gleiche vier Bilder, gleiches Layout, nur andere Fugen und Ränder.</p>
+<h2>Die fünf Stile</h2>
+<p class="note">Gleiche vier Bilder, nur andere Fugen, Ränder und Schatten. Ab „Abzüge“ bekommt jedes Bild eine Papierkante — erst dadurch liest sich ein gedrehtes oder überlapptes Bild als Abzug statt als schiefes Raster.</p>
 <div class="grid">${styleSections}</div>
 
 <h2>Was der Generator wählt</h2>
@@ -146,7 +169,7 @@ const html = `<!DOCTYPE html>
 <div class="grid">${mixSections}</div>
 
 <h2>Alle Rezepte</h2>
-<p class="note">Der ganze Katalog, aus dem gewählt wird.</p>
+<p class="note">Der ganze Katalog, aus dem gewählt wird. Die überlappenden unten werden nur angeboten, wenn der Stil Papierkanten hat.</p>
 <div class="grid">${recipeSections}</div>
 </body></html>`;
 
