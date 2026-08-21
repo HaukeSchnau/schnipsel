@@ -9,8 +9,9 @@
 import { File, Paths } from 'expo-file-system';
 
 import type { Collage, Photo } from '../model/collage';
+import { emptyCollage } from '../model/collage';
 
-const DRAFT_VERSION = 1;
+const DRAFT_VERSION = 2;
 const draftFile = new File(Paths.document, 'draft.json');
 
 export type Draft = { version: number; collage: Collage; photos: Photo[] };
@@ -44,14 +45,35 @@ export function loadDraft(): { collage: Collage; photos: Photo[] } | null {
   } catch {
     return null;
   }
-  if (draft.version !== DRAFT_VERSION) return null;
+  if (draft.version !== DRAFT_VERSION && draft.version !== 1) return null;
 
   const photos = draft.photos.filter((photo) => new File(photo.uri).exists);
   const available = new Set(photos.map((p) => p.id));
   const layers = draft.collage.layers.filter((layer) => available.has(layer.photoId));
   if (photos.length === 0) return null;
 
-  return { collage: { ...draft.collage, layers }, photos };
+  const collage =
+    draft.version === 1 ? migrateFromV1(draft.collage) : draft.collage;
+  return { collage: { ...collage, layers }, photos };
+}
+
+/**
+ * v1 drafts have no `margin`, and their gap/radius/safe-zone values are the old
+ * card-grid defaults — the very look this version exists to get rid of. The
+ * photos and their arrangement are the work worth keeping, so those carry over
+ * and the styling is reset.
+ */
+function migrateFromV1(collage: Collage): Collage {
+  const fresh = emptyCollage(collage.id);
+  return {
+    ...collage,
+    gap: fresh.gap,
+    margin: fresh.margin,
+    radius: fresh.radius,
+    scatter: fresh.scatter,
+    respectSafeZone: fresh.respectSafeZone,
+    background: fresh.background,
+  };
 }
 
 export function clearDraft() {

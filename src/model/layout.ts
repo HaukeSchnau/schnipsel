@@ -6,68 +6,131 @@
  * and we search for the recipe *and* the photo-to-slot assignment that requires
  * the least cropping. Two portraits and a landscape get a wide slot on top and
  * two tall ones underneath, without anyone choosing that.
+ *
+ * The recipes deliberately are not all even tilings. A grid of equal cells is
+ * the safest possible fit and the dullest possible picture, so most counts also
+ * offer a layout with one dominant photo — and the search gets a small nudge
+ * towards those when the crop cost is close.
  */
 import { DEFAULT_CROP, type Layer, type Rect } from './collage';
 
 export type Recipe = { id: string; slots: Rect[] };
 
-/** `n` cells side by side, filling a horizontal band. */
-const band = (y: number, h: number, n: number): Rect[] =>
-  Array.from({ length: n }, (_, i) => ({ x: i / n, y, w: 1 / n, h }));
+/**
+ * Every recipe tiles the canvas. Overlapping arrangements were tried and
+ * dropped: with opaque photos an overlap is invisible — the covered part is
+ * simply gone — so it renders identically to a plain split, and the leftover
+ * slivers of background read as misalignment rather than intent. Overlap needs
+ * a visible edge per photo (a drop shadow or a white border) before it earns
+ * its place. See notes/schnipsel.md.
+ */
 
-/** `n` cells stacked, filling a vertical column. */
-const column = (x: number, w: number, n: number): Rect[] =>
-  Array.from({ length: n }, (_, i) => ({ x, y: i / n, w, h: 1 / n }));
+const UNIT: Rect = { x: 0, y: 0, w: 1, h: 1 };
 
-const grid = (cols: number, rows: number): Rect[] =>
-  Array.from({ length: cols * rows }, (_, i) => ({
-    x: (i % cols) / cols,
-    y: Math.floor(i / cols) / rows,
-    w: 1 / cols,
-    h: 1 / rows,
-  }));
+/** Splits a rect into horizontal bands with the given relative weights. */
+function rows(rect: Rect, ...weights: number[]): Rect[] {
+  const total = weights.reduce((a, b) => a + b, 0);
+  let y = rect.y;
+  return weights.map((weight) => {
+    const h = (rect.h * weight) / total;
+    const band = { x: rect.x, y, w: rect.w, h };
+    y += h;
+    return band;
+  });
+}
 
-const FULL: Rect = { x: 0, y: 0, w: 1, h: 1 };
+/** Splits a rect into vertical columns with the given relative weights. */
+function cols(rect: Rect, ...weights: number[]): Rect[] {
+  const total = weights.reduce((a, b) => a + b, 0);
+  let x = rect.x;
+  return weights.map((weight) => {
+    const w = (rect.w * weight) / total;
+    const column = { x, y: rect.y, w, h: rect.h };
+    x += w;
+    return column;
+  });
+}
 
-export const RECIPES: Recipe[] = [
-  { id: '1/full', slots: [FULL] },
+const grid = (columnCount: number, rowCount: number): Rect[] =>
+  rows(UNIT, ...Array(rowCount).fill(1)).flatMap((band) =>
+    cols(band, ...Array(columnCount).fill(1))
+  );
 
-  { id: '2/stack', slots: band(0, 0.5, 1).concat(band(0.5, 0.5, 1)) },
-  { id: '2/side', slots: band(0, 1, 2) },
-  { id: '2/big-top', slots: [{ x: 0, y: 0, w: 1, h: 0.62 }, { x: 0, y: 0.62, w: 1, h: 0.38 }] },
+/** Builds a recipe from a band split, e.g. `stacked([52, 48], [1, 2])`. */
+function stacked(weights: number[], perBand: number[]): Rect[] {
+  return rows(UNIT, ...weights).flatMap((band, i) =>
+    perBand[i] === 1 ? [band] : cols(band, ...Array(perBand[i]).fill(1))
+  );
+}
 
-  { id: '3/rows', slots: column(0, 1, 3) },
-  { id: '3/cols', slots: band(0, 1, 3) },
-  { id: '3/big-top', slots: [{ x: 0, y: 0, w: 1, h: 0.6 }, ...band(0.6, 0.4, 2)] },
-  { id: '3/big-bottom', slots: [...band(0, 0.4, 2), { x: 0, y: 0.4, w: 1, h: 0.6 }] },
-  { id: '3/big-left', slots: [{ x: 0, y: 0, w: 0.6, h: 1 }, ...column(0.6, 0.4, 2)] },
+export const RECIPES: Recipe[] = (() => {
+  const two = rows(UNIT, 62, 38);
+  const twoLow = rows(UNIT, 38, 62);
+  const leftHeavy = cols(UNIT, 62, 38);
+  const rightHeavy = cols(UNIT, 38, 62);
+  const leftHeavy4 = cols(UNIT, 58, 42);
+  const leftHeavy5 = cols(UNIT, 55, 45);
 
-  { id: '4/quad', slots: grid(2, 2) },
-  { id: '4/rows', slots: column(0, 1, 4) },
-  { id: '4/big-top', slots: [{ x: 0, y: 0, w: 1, h: 0.55 }, ...band(0.55, 0.45, 3)] },
-  { id: '4/big-left', slots: [{ x: 0, y: 0, w: 0.58, h: 1 }, ...column(0.58, 0.42, 3)] },
+  return [
+    { id: '1/full', slots: [UNIT] },
 
-  { id: '5/2-3', slots: [...band(0, 0.5, 2), ...band(0.5, 0.5, 3)] },
-  { id: '5/3-2', slots: [...band(0, 0.5, 3), ...band(0.5, 0.5, 2)] },
-  {
-    id: '5/big-left',
-    slots: [
-      { x: 0, y: 0, w: 0.55, h: 1 },
-      ...grid(2, 2).map((r) => ({ x: 0.55 + r.x * 0.45, y: r.y, w: r.w * 0.45, h: r.h })),
-    ],
-  },
+    { id: '2/stack', slots: rows(UNIT, 1, 1) },
+    { id: '2/hero-top', slots: two },
+    { id: '2/hero-bottom', slots: twoLow },
+    { id: '2/side', slots: cols(UNIT, 1, 1) },
 
-  { id: '6/3x2', slots: grid(3, 2) },
-  { id: '6/2x3', slots: grid(2, 3) },
-  { id: '6/1-2-3', slots: [...band(0, 0.34, 1), ...band(0.34, 0.33, 2), ...band(0.67, 0.33, 3)] },
-];
+    { id: '3/rows', slots: rows(UNIT, 1, 1, 1) },
+    { id: '3/band', slots: rows(UNIT, 30, 40, 30) },
+    { id: '3/hero-top', slots: stacked([52, 48], [1, 2]) },
+    { id: '3/hero-bottom', slots: stacked([48, 52], [2, 1]) },
+    {
+      id: '3/hero-left',
+      slots: [leftHeavy[0], ...rows(leftHeavy[1], 1, 1)],
+    },
+    {
+      id: '3/hero-right',
+      slots: [...rows(rightHeavy[0], 1, 1), rightHeavy[1]],
+    },
+
+    { id: '4/quad', slots: grid(2, 2) },
+    { id: '4/rows', slots: rows(UNIT, 1, 1, 1, 1) },
+    { id: '4/hero-top', slots: stacked([46, 54], [1, 3]) },
+    { id: '4/hero-bottom', slots: stacked([54, 46], [3, 1]) },
+    { id: '4/sandwich', slots: stacked([38, 26, 36], [1, 2, 1]) },
+    {
+      id: '4/hero-left',
+      slots: [leftHeavy4[0], ...rows(leftHeavy4[1], 1, 1, 1)],
+    },
+
+    { id: '5/2-3', slots: stacked([48, 52], [2, 3]) },
+    { id: '5/3-2', slots: stacked([52, 48], [3, 2]) },
+    { id: '5/hero-top', slots: stacked([42, 29, 29], [1, 2, 2]) },
+    { id: '5/hero-bottom', slots: stacked([29, 29, 42], [2, 2, 1]) },
+    {
+      id: '5/hero-left',
+      slots: [
+        leftHeavy5[0],
+        ...rows(leftHeavy5[1], 1, 1).flatMap((band) => cols(band, 1, 1)),
+      ],
+    },
+
+    { id: '6/2x3', slots: grid(2, 3) },
+    { id: '6/3x2', slots: grid(3, 2) },
+    { id: '6/1-2-3', slots: stacked([34, 33, 33], [1, 2, 3]) },
+    { id: '6/3-2-1', slots: stacked([33, 33, 34], [3, 2, 1]) },
+    { id: '6/hero-top', slots: stacked([40, 30, 30], [1, 2, 3]) },
+
+  ];
+})();
 
 export type Suggestion = {
   recipe: Recipe;
   /** `assignment[slotIndex]` is the index of the photo that goes in that slot. */
   assignment: number[];
   /** Total crop mismatch; lower is better. */
-  cost: number;
+  cropCost: number;
+  /** What suggestions are actually ranked by: crop cost less a hierarchy nudge. */
+  score: number;
 };
 
 /**
@@ -83,6 +146,24 @@ function mismatch(photoAspect: number, slotAspect: number): number {
   const loss = Math.log(photoAspect / slotAspect);
   return loss * loss;
 }
+
+/**
+ * How unequal a recipe's cells are, as a coefficient of variation. An even grid
+ * scores 0; one big photo over three small ones scores around 0.8.
+ */
+function hierarchy(slots: Rect[]): number {
+  if (slots.length < 2) return 0;
+  const mean = 1 / slots.length;
+  const variance =
+    slots.reduce((sum, slot) => sum + (slot.w * slot.h - mean) ** 2, 0) / slots.length;
+  return Math.sqrt(variance) / mean;
+}
+
+/**
+ * Weight of the hierarchy nudge. Small on purpose: it should break ties between
+ * layouts that crop about equally well, never rescue one that butchers a photo.
+ */
+const HIERARCHY_BONUS = 0.05;
 
 function permutations(n: number): number[][] {
   if (n <= 1) return [[0]];
@@ -102,9 +183,9 @@ function permutations(n: number): number[][] {
 
 /** Fallback for counts we have no hand-made recipe for. */
 function genericGrid(count: number): Recipe {
-  const cols = Math.ceil(Math.sqrt(count));
-  const rows = Math.ceil(count / cols);
-  return { id: `${count}/auto`, slots: grid(cols, rows).slice(0, count) };
+  const columnCount = Math.ceil(Math.sqrt(count));
+  const rowCount = Math.ceil(count / columnCount);
+  return { id: `${count}/auto`, slots: grid(columnCount, rowCount).slice(0, count) };
 }
 
 /**
@@ -127,15 +208,18 @@ export function suggestLayouts(photoAspects: number[], contentAspect: number): S
   const suggestions: Suggestion[] = [];
   for (const recipe of recipes) {
     const slotAspects = recipe.slots.map((s) => (s.w / s.h) * contentAspect);
+    const bonus = HIERARCHY_BONUS * hierarchy(recipe.slots);
     let best: Suggestion | null = null;
     for (const order of orders) {
-      let cost = 0;
-      for (let i = 0; i < count; i++) cost += mismatch(photoAspects[order[i]], slotAspects[i]);
-      if (!best || cost < best.cost) best = { recipe, assignment: order, cost };
+      let cropCost = 0;
+      for (let i = 0; i < count; i++) cropCost += mismatch(photoAspects[order[i]], slotAspects[i]);
+      if (!best || cropCost < best.cropCost) {
+        best = { recipe, assignment: order, cropCost, score: cropCost - bonus };
+      }
     }
     if (best) suggestions.push(best);
   }
-  return suggestions.sort((a, b) => a.cost - b.cost);
+  return suggestions.sort((a, b) => a.score - b.score);
 }
 
 export function layersFrom(suggestion: Suggestion, photoIds: string[]): Layer[] {

@@ -42,9 +42,9 @@ describe('suggestLayouts', () => {
   });
 
   test('the landscape photo gets the wide slot, whatever order it was tapped in', () => {
-    // 3/big-top has one wide slot on top and two narrower ones underneath.
+    // 3/hero-top has one wide slot on top and two narrower ones underneath.
     const best = suggestLayouts([2 / 3, 16 / 9, 2 / 3], STORY).find(
-      (s) => s.recipe.id === '3/big-top'
+      (s) => s.recipe.id === '3/hero-top'
     )!;
     expect(best.assignment[0]).toBe(1);
   });
@@ -53,7 +53,19 @@ describe('suggestLayouts', () => {
     const all = suggestLayouts([1, 1, 1, 1], STORY);
     expect(all.length).toBeGreaterThan(1);
     for (let i = 1; i < all.length; i++) {
-      expect(all[i].cost).toBeGreaterThanOrEqual(all[i - 1].cost);
+      expect(all[i].score).toBeGreaterThanOrEqual(all[i - 1].score);
+    }
+  });
+
+  test('the hierarchy nudge never rescues a layout that butchers a photo', () => {
+    // Three matching portraits: an even three-row split fits them all badly on
+    // a 9:16 story, but a hero layout must not win just for being uneven.
+    for (const aspects of [[1, 1, 1], [2 / 3, 2 / 3, 2 / 3], [3 / 2, 3 / 2, 3 / 2]]) {
+      const all = suggestLayouts(aspects, STORY);
+      const best = all[0];
+      const cheapest = [...all].sort((a, b) => a.cropCost - b.cropCost)[0];
+      // The winner may differ from the pure-crop optimum, but only barely.
+      expect(best.cropCost - cheapest.cropCost).toBeLessThan(0.15);
     }
   });
 
@@ -64,7 +76,7 @@ describe('suggestLayouts', () => {
 
   test('layers come out in slot order, carrying the assigned photo', () => {
     const best = suggestLayouts([2 / 3, 16 / 9, 2 / 3], STORY).find(
-      (s) => s.recipe.id === '3/big-top'
+      (s) => s.recipe.id === '3/hero-top'
     )!;
     const layers = layersFrom(best, ['a', 'b', 'c']);
     expect(layers.map((l) => l.photoId)).toEqual(['b', 'a', 'c']);

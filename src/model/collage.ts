@@ -47,8 +47,15 @@ export type Collage = {
   id: string;
   layers: Layer[];
   background: Background;
-  /** 0 = edge to edge, 1 = airy. Drives gutters and the outer margin at once. */
+  /** Gutter between photos. 0 = they touch. */
   gap: number;
+  /**
+   * Border around the whole collage. Separate from `gap` on purpose: a
+   * full-bleed collage wants hairline gutters and *no* outer border, while a
+   * print-style one wants a mat wider than its gutters. Tying them together
+   * made every layout look like a card grid.
+   */
+  margin: number;
   /** 0 = square corners, 1 = fully rounded. */
   radius: number;
   /** 0 = accurate, 1 = shoebox of loose prints. */
@@ -85,7 +92,9 @@ export const CANVAS_SIZES: Record<CanvasPreset, Size> = {
 export const SAFE_ZONE = { top: 250 / 1920, bottom: 310 / 1920 };
 
 /** Largest gutter the gap slider can produce, as a fraction of the short edge. */
-export const MAX_GAP = 0.09;
+export const MAX_GAP = 0.05;
+/** Largest outer border the margin slider can produce, same units. */
+export const MAX_MARGIN = 0.12;
 /** Largest scatter angle in degrees at `scatter === 1`. */
 export const MAX_SCATTER_DEG = 7;
 
@@ -95,15 +104,26 @@ export function aspectOf(photo: Pick<Photo, 'width' | 'height'>) {
   return photo.width / photo.height;
 }
 
+/**
+ * Full bleed, hairline gutters, square corners.
+ *
+ * The first version defaulted to keeping every photo inside the safe zone,
+ * which left 29% of the story empty and — worse — made the layout generator
+ * plan for a nearly square area instead of 9:16. Rounded corners over wide
+ * gutters on a dark surface then finished the job of making the export look
+ * like an app screenshot. The safe zone is a guide you switch on when you need
+ * it, not the frame everything is built inside.
+ */
 export function emptyCollage(id: string): Collage {
   return {
     id,
     layers: [],
-    background: { kind: 'color', color: '#12100E' },
-    gap: 0.25,
-    radius: 0.12,
+    background: { kind: 'color', color: '#F3EDE3' },
+    gap: 0.08,
+    margin: 0,
+    radius: 0,
     scatter: 0,
-    respectSafeZone: true,
+    respectSafeZone: false,
     canvas: 'story',
     updatedAt: Date.now(),
   };

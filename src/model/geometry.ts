@@ -9,6 +9,7 @@
 import {
   CANVAS_SIZES,
   MAX_GAP,
+  MAX_MARGIN,
   MAX_SCATTER_DEG,
   SAFE_ZONE,
   type Collage,
@@ -24,20 +25,29 @@ export function gutter(collage: Collage, canvas: Size): number {
   return collage.gap * MAX_GAP * Math.min(canvas.width, canvas.height);
 }
 
+/** Outer border in canvas pixels, driven by the margin slider. */
+export function margin(collage: Collage, canvas: Size): number {
+  return collage.margin * MAX_MARGIN * Math.min(canvas.width, canvas.height);
+}
+
 /**
- * The area layers are positioned within. Half the gutter is taken off here and
- * half off every layer, so one slider gives you both the gaps between photos
- * and the margin around them.
+ * The area layers are positioned within.
+ *
+ * Expanded by half a gutter so that the half-gutter every layer gives back in
+ * `layerRect` cancels out at the edges. That way the outer border is exactly
+ * `margin` — zero when the collage is meant to run off the edge — while
+ * neighbouring photos still sit a full gutter apart.
  */
 export function contentRect(collage: Collage, canvas: Size): Rect {
   const top = collage.respectSafeZone ? canvas.height * SAFE_ZONE.top : 0;
   const bottom = collage.respectSafeZone ? canvas.height * SAFE_ZONE.bottom : 0;
+  const m = margin(collage, canvas);
   const half = gutter(collage, canvas) / 2;
   return {
-    x: half,
-    y: top + half,
-    w: Math.max(1, canvas.width - half * 2),
-    h: Math.max(1, canvas.height - top - bottom - half * 2),
+    x: m - half,
+    y: top + m - half,
+    w: Math.max(1, canvas.width - m * 2 + half * 2),
+    h: Math.max(1, canvas.height - top - bottom - m * 2 + half * 2),
   };
 }
 

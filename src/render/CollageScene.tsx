@@ -136,7 +136,9 @@ export function CollageScene({
           })()
         : null}
 
-      {showSafeZone && collage.respectSafeZone ? <SafeZone size={size} /> : null}
+      {/* Independent of `respectSafeZone`: the guide matters most when the
+          collage *does* run under Instagram's bars. */}
+      {showSafeZone ? <SafeZone size={size} /> : null}
     </Group>
   );
 }
@@ -227,13 +229,33 @@ function LiveCrop({
   );
 }
 
+/**
+ * Shows what Instagram covers with its own account bar and reply bar. A light
+ * tint plus a hairline, not a heavy mask — it has to read as a guide laid over
+ * the picture rather than as part of it.
+ */
 function SafeZone({ size }: { size: Size }) {
   const top = size.height * SAFE_ZONE.top;
   const bottom = size.height * SAFE_ZONE.bottom;
+  const hairline = Math.max(1, size.height * 0.0012);
   return (
     <Group>
-      <Rect x={0} y={0} width={size.width} height={top} color="rgba(0,0,0,0.35)" />
-      <Rect x={0} y={size.height - bottom} width={size.width} height={bottom} color="rgba(0,0,0,0.35)" />
+      <Rect x={0} y={0} width={size.width} height={top} color="rgba(0,0,0,0.22)" />
+      <Rect x={0} y={top} width={size.width} height={hairline} color="rgba(255,255,255,0.5)" />
+      <Rect
+        x={0}
+        y={size.height - bottom}
+        width={size.width}
+        height={bottom}
+        color="rgba(0,0,0,0.22)"
+      />
+      <Rect
+        x={0}
+        y={size.height - bottom - hairline}
+        width={size.width}
+        height={hairline}
+        color="rgba(255,255,255,0.5)"
+      />
     </Group>
   );
 }

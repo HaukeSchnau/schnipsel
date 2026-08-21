@@ -31,7 +31,8 @@ import { renderCollage, saveToGallery } from '../render/export';
 import { shareToInstagramStory } from '../share/instagram';
 import { extractPalette } from '../photos/palette';
 import { snapDelta, SNAP_THRESHOLD_RATIO, type SnapTargets } from '../editor/snapping';
-import { Button, Slider, tick, Toolbar } from '../ui/controls';
+import { applyStyle, currentStyle, STYLES, STYLE_ORDER } from '../model/styles';
+import { Button, Chip, Slider, tick, Toolbar } from '../ui/controls';
 import { theme } from '../ui/theme';
 
 type Selection = { id: string; mode: 'frame' | 'crop' } | null;
@@ -58,6 +59,7 @@ export function EditorScreen({
   const images = useSkImages(photos);
   const [selected, setSelected] = useState<Selection>(null);
   const [showSafeZone, setShowSafeZone] = useState(true);
+  const [showSliders, setShowSliders] = useState(false);
   const [palette, setPalette] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [available, setAvailable] = useState({ width: 0, height: 0 });
@@ -87,6 +89,7 @@ export function EditorScreen({
   }, [photoKey]);
 
   const selectedLayer = collage.layers.find((l) => l.id === selected?.id) ?? null;
+  const style = currentStyle(collage);
 
   /** Geometry the gesture worklets close over. Recomputed every render. */
   const geometry = useMemo(() => {
@@ -272,7 +275,7 @@ export function EditorScreen({
         <Button label="Fotos" tone="quiet" onPress={onPickPhotos} />
         <View style={styles.topRight}>
           <IconToggle
-            label="Ränder"
+            label="Hilfslinien"
             active={showSafeZone}
             onPress={() => setShowSafeZone((v) => !v)}
           />
@@ -314,51 +317,81 @@ export function EditorScreen({
           <Text style={styles.hint}>Tippe ein Bild an, um es anzupassen</Text>
         )}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.swatchRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
+          {STYLE_ORDER.map((name) => (
+            <View key={name} style={{ marginRight: 8 }}>
+              <Chip
+                label={STYLES[name].label}
+                active={style === name}
+                onPress={() => {
+                  tick();
+                  apply((c) => applyStyle(c, name));
+                }}
+              />
+            </View>
+          ))}
+        </ScrollView>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
           <Pressable onPress={useBlurredBackground} style={[styles.swatch, styles.swatchPhoto]}>
             <Text style={styles.swatchPhotoLabel}>Foto</Text>
           </Pressable>
-          {palette.map((color) => (
+          {[...palette, '#F3EDE3', '#12100E'].map((color) => (
             <Pressable
               key={color}
               onPress={() => setBackground(color)}
-              style={[styles.swatch, { backgroundColor: color }]}
-            />
-          ))}
-          {['#12100E', '#F3EDE3'].map((color) => (
-            <Pressable
-              key={color}
-              onPress={() => setBackground(color)}
-              style={[styles.swatch, { backgroundColor: color }]}
+              style={[
+                styles.swatch,
+                { backgroundColor: color },
+                collage.background.kind === 'color' && collage.background.color === color
+                  ? styles.swatchActive
+                  : null,
+              ]}
             />
           ))}
         </ScrollView>
 
-        <Slider
-          label="Abstand"
-          value={collage.gap}
-          onChange={(v) => apply((c) => ({ ...c, gap: v }), { history: false })}
-          onCommit={(v) => apply((c) => ({ ...c, gap: v }))}
-        />
-        <Slider
-          label="Rundung"
-          value={collage.radius}
-          onChange={(v) => apply((c) => ({ ...c, radius: v }), { history: false })}
-          onCommit={(v) => apply((c) => ({ ...c, radius: v }))}
-        />
-        <Slider
-          label="Streuung"
-          value={collage.scatter}
-          onChange={(v) => apply((c) => ({ ...c, scatter: v }), { history: false })}
-          onCommit={(v) => apply((c) => ({ ...c, scatter: v }))}
-        />
+        {showSliders ? (
+          <>
+            <Slider
+              label="Fuge"
+              value={collage.gap}
+              onChange={(v) => apply((c) => ({ ...c, gap: v }), { history: false })}
+              onCommit={(v) => apply((c) => ({ ...c, gap: v }))}
+            />
+            <Slider
+              label="Rand"
+              value={collage.margin}
+              onChange={(v) => apply((c) => ({ ...c, margin: v }), { history: false })}
+              onCommit={(v) => apply((c) => ({ ...c, margin: v }))}
+            />
+            <Slider
+              label="Rundung"
+              value={collage.radius}
+              onChange={(v) => apply((c) => ({ ...c, radius: v }), { history: false })}
+              onCommit={(v) => apply((c) => ({ ...c, radius: v }))}
+            />
+            <Slider
+              label="Streuung"
+              value={collage.scatter}
+              onChange={(v) => apply((c) => ({ ...c, scatter: v }), { history: false })}
+              onCommit={(v) => apply((c) => ({ ...c, scatter: v }))}
+            />
+            <View style={styles.row}>
+              <IconToggle
+                label="Sicherheitsrand"
+                active={collage.respectSafeZone}
+                onPress={() => apply((c) => ({ ...c, respectSafeZone: !c.respectSafeZone }))}
+              />
+            </View>
+          </>
+        ) : null}
 
         <View style={styles.actions}>
           <Button label="Würfeln" onPress={() => { tick(); shuffle(); }} />
           <Button
-            label="Randlos"
-            tone={collage.respectSafeZone ? 'normal' : 'primary'}
-            onPress={() => apply((c) => ({ ...c, respectSafeZone: !c.respectSafeZone }))}
+            label={showSliders ? 'Regler zu' : 'Regler'}
+            onPress={() => setShowSliders((v) => !v)}
           />
           <Button label={busy ? 'Rendert …' : 'Zu Instagram'} tone="primary" onPress={exportCollage} style={{ flex: 1 }} />
         </View>
@@ -440,7 +473,7 @@ const styles = StyleSheet.create({
   topRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   stage: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
   hint: { color: theme.textDim, fontSize: 12, textAlign: 'center', paddingBottom: 8 },
-  swatchRow: { flexGrow: 0, paddingBottom: 10 },
+  row: { flexGrow: 0, paddingBottom: 10 },
   swatch: {
     width: 34,
     height: 34,
@@ -449,6 +482,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.line,
   },
+  swatchActive: { borderColor: theme.accent, borderWidth: 2 },
   swatchPhoto: { alignItems: 'center', justifyContent: 'center', backgroundColor: theme.surfaceHigh },
   swatchPhotoLabel: { color: theme.textDim, fontSize: 10, fontWeight: '700' },
   actions: { flexDirection: 'row', gap: 10, paddingTop: 10, paddingBottom: 6 },
