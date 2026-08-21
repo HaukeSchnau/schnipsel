@@ -7,16 +7,15 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#12100E",
+    "backgroundColor": "#17130F",
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "package": "dev.schnau.schnipsel",
       "adaptiveIcon": {
-        "backgroundColor": "#12100E",
+        "backgroundColor": "#17130F",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -39,6 +38,15 @@
             "photo"
           ],
           "isAccessMediaLocationEnabled": false
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "backgroundColor": "#17130F",
+          "resizeMode": "contain"
         }
       ]
     ],
