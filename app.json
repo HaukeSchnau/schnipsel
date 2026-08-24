@@ -9,7 +9,11 @@
     "userInterfaceStyle": "light",
     "backgroundColor": "#17130F",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.schnau.schnipsel",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "dev.schnau.schnipsel",
