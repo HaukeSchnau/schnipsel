@@ -1,10 +1,11 @@
 # Schnipsel
 
-Collagen für Instagram-Storys, ohne Instagrams Layout-Werkzeug.
+Ein kleiner Collage-Editor für Instagram-Storys.
 
 Bilder auswählen, die App schlägt ein Layout vor, das zu den Seitenverhältnissen
 passt, alles bleibt danach anfassbar, und ein Tipp schiebt das fertige Bild in
-den Story-Composer.
+den Story-Composer. Zuschnitt, Position und Größe jedes Bildes lassen sich frei
+anpassen.
 
 ## Loslegen
 
@@ -48,5 +49,5 @@ lässt sich danach schiefziehen, ohne das Raster zu verlassen.
 
 ## Nicht drin, mit Absicht
 
-Kein Text, keine Filter, keine Sticker. Instagram kann das besser, und sie kennt
-die Bedienung dort. Schnipsel baut das Layout, Instagram macht den Rest.
+Kein Text, keine Filter, keine Sticker. Schnipsel kümmert sich um das Layout und
+übergibt das Ergebnis an Instagrams Story-Composer für den letzten Schliff.
