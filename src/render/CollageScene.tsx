@@ -116,10 +116,12 @@ export function CollageScene({
 
       {collage.layers.map((layer) => {
         const image = images[layer.photoId];
+
         if (!image) return null;
         const box = layerRect(layer.frame, content, gut);
         const radius = cornerRadius(collage.radius, box);
         const angle = layerAngle(layer, collage.scatter);
+
         const body = (
           <LayerBody
             layer={layer}
@@ -132,6 +134,7 @@ export function CollageScene({
             live={live}
           />
         );
+
         return live ? (
           <LiveGroup key={layer.id} layerId={layer.id} box={box} live={live}>
             {body}
@@ -176,14 +179,17 @@ function LayerMarker({
   kind: "selection" | "source" | "target";
 }) {
   const layer = collage.layers.find((l) => l.id === layerId);
+
   if (!layer) return null;
   const content = contentRect(collage, size);
   const box = layerRect(layer.frame, content, gutter(collage, size));
   const radius = cornerRadius(collage.radius, box);
   const shape = rrect(rect(box.x, box.y, box.w, box.h), radius, radius);
+
   const transform: Transforms3d = [
     { rotate: (layerAngle(layer, collage.scatter) * Math.PI) / 180 },
   ];
+
   const origin = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
   const stroke = Math.max(1.5, size.width * (kind === "selection" ? 0.004 : 0.008));
 
@@ -214,7 +220,9 @@ function LiveGroup({
 }) {
   const transform = useDerivedValue<Transforms3d>(() => {
     const l = live.value;
+
     if (!l || l.layerId !== layerId || l.mode !== "frame") return IDENTITY;
+
     return [{ translateX: l.tx }, { translateY: l.ty }, { scale: l.scale }];
   }, [live, layerId]);
 
@@ -251,6 +259,7 @@ function LayerBody({
   const dest = imageDestRect(image.width() / image.height(), inner, layer.crop);
   const centre = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
   const card = rrect(rect(box.x, box.y, box.w, box.h), radius, radius);
+
   const photo = (
     <Image image={image} fit="fill" x={dest.x} y={dest.y} width={dest.w} height={dest.h} />
   );
@@ -298,7 +307,9 @@ function LiveCrop({
 }) {
   const transform = useDerivedValue<Transforms3d>(() => {
     const l = live.value;
+
     if (!l || l.layerId !== layerId || l.mode !== "crop") return IDENTITY;
+
     return [{ translateX: l.tx }, { translateY: l.ty }, { scale: l.scale }];
   }, [live, layerId]);
 
@@ -318,6 +329,7 @@ function SafeZone({ size }: { size: Size }) {
   const top = size.height * SAFE_ZONE.top;
   const bottom = size.height * SAFE_ZONE.bottom;
   const hairline = Math.max(1, size.height * 0.0012);
+
   return (
     <Group>
       <Rect x={0} y={0} width={size.width} height={top} color="rgba(0,0,0,0.22)" />

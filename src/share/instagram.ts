@@ -39,6 +39,7 @@ export async function shareToInstagramStory(
   sourceApplication?: string,
 ): Promise<StoryShareResult> {
   const contentUri = await getContentUriAsync(fileUri);
+
   try {
     await IntentLauncher.startActivityAsync(ADD_TO_STORY, {
       data: contentUri,
@@ -46,6 +47,7 @@ export async function shareToInstagramStory(
       flags: FLAG_GRANT_READ_URI_PERMISSION,
       ...(sourceApplication ? { extra: { source_application: sourceApplication } } : {}),
     });
+
     return "opened";
   } catch {
     // ActivityNotFoundException: Instagram isn't installed, or is too old to

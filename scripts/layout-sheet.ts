@@ -29,6 +29,7 @@ const PAPER = "#FBF8F2";
 
 function layersFromRecipe(recipeId: string): Layer[] {
   const recipe = RECIPES.find((r) => r.id === recipeId)!;
+
   return recipe.slots.map((slot, i) => ({
     id: `${recipeId}:${i}`,
     photoId: `p${i}`,
@@ -64,11 +65,14 @@ function svg(collage: Collage, labels?: string[]): string {
       const cx = (card.x + card.w / 2) * SCALE;
       const cy = (card.y + card.h / 2) * SCALE;
       const filter = sh.opacity > 0 ? ` filter="url(#${shadowId})"` : "";
+
       const box = (r: typeof card, fill: string, rx: number, extra = "") =>
         `<rect x="${(r.x * SCALE).toFixed(1)}" y="${(r.y * SCALE).toFixed(1)}"
                width="${(r.w * SCALE).toFixed(1)}" height="${(r.h * SCALE).toFixed(1)}"
                rx="${(rx * SCALE).toFixed(1)}" fill="${fill}"${extra} />`;
+
       const label = labels?.[i] ?? String(i + 1);
+
       return `<g transform="rotate(${angle.toFixed(2)} ${cx.toFixed(1)} ${cy.toFixed(1)})">
         ${bd > 0 ? box(card, PAPER, radius, filter) : sh.opacity > 0 ? box(card, INK[i % INK.length], radius, filter) : ""}
         ${box(inner, INK[i % INK.length], Math.max(0, radius - bd))}
@@ -105,9 +109,11 @@ const MIXES: { label: string; aspects: number[] }[] = [
 function collageForMix(aspects: number[], style: StyleName): Collage {
   const base = applyStyle(emptyCollage("sheet"), style);
   const content = contentRect(base, STORY);
+
   const best = suggestLayouts(aspects, content.w / content.h, {
     overlapping: base.border > 0,
   })[0];
+
   return {
     ...base,
     layers: layersFrom(
@@ -122,6 +128,7 @@ const out = process.argv[2] ?? "./layout-sheet";
 const styleSections = STYLE_ORDER.map((name) => {
   const mix = [3 / 4, 16 / 9, 1, 3 / 4];
   const collage = collageForMix(mix, name);
+
   return tile(STYLES[name].label, STYLES[name].hint, svg(collage));
 }).join("\n");
 
@@ -129,19 +136,24 @@ const mixSections = MIXES.map(({ label, aspects }) => {
   const collage = collageForMix(aspects, "kante");
   const content = contentRect(collage, STORY);
   const best = suggestLayouts(aspects, content.w / content.h)[0];
+
   const labels = best.assignment.map((photoIndex) => {
     const a = aspects[photoIndex];
+
     return a > 1.2 ? "quer" : a < 0.85 ? "hoch" : "1:1";
   });
+
   return tile(label, best.recipe.id, svg(collage, labels));
 }).join("\n");
 
 const recipeSections = RECIPES.map((recipe) => {
   const style: StyleName = recipe.overlapping ? "schuhkarton" : "kante";
+
   const collage = {
     ...applyStyle(emptyCollage("sheet"), style),
     layers: layersFromRecipe(recipe.id),
   };
+
   return tile(
     recipe.id,
     recipe.overlapping ? "überlappend" : `${recipe.slots.length} Bilder`,
@@ -187,5 +199,7 @@ const html = `<!DOCTYPE html>
 </body></html>`;
 
 await Bun.write(`${out}/index.html`, html);
+
 console.log(`geschrieben: ${out}/index.html`);
+
 console.log(`Rezepte: ${RECIPES.length}, Mixe: ${MIXES.length}, Stile: ${STYLE_ORDER.length}`);

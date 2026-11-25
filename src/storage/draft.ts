@@ -24,6 +24,7 @@ export function saveDraft(collage: Collage, photos: Photo[]) {
   pending = setTimeout(() => {
     pending = null;
     const draft: Draft = { version: DRAFT_VERSION, collage, photos };
+
     try {
       draftFile.create({ overwrite: true });
       draftFile.write(JSON.stringify(draft));
@@ -40,16 +41,19 @@ export function saveDraft(collage: Collage, photos: Photo[]) {
 export function loadDraft(): { collage: Collage; photos: Photo[] } | null {
   if (!draftFile.exists) return null;
   let draft: Draft;
+
   try {
     draft = JSON.parse(draftFile.textSync());
   } catch {
     return null;
   }
+
   if (draft.version < 1 || draft.version > DRAFT_VERSION) return null;
 
   const photos = draft.photos.filter((photo) => new File(photo.uri).exists);
   const available = new Set(photos.map((p) => p.id));
   const layers = draft.collage.layers.filter((layer) => available.has(layer.photoId));
+
   if (photos.length === 0) return null;
 
   return { collage: { ...migrate(draft.collage, draft.version), layers }, photos };
@@ -66,6 +70,7 @@ export function loadDraft(): { collage: Collage; photos: Photo[] } | null {
  */
 function migrate(collage: Collage, version: number): Collage {
   const fresh = emptyCollage(collage.id);
+
   if (version === 1) {
     return {
       ...collage,
@@ -79,6 +84,7 @@ function migrate(collage: Collage, version: number): Collage {
       background: fresh.background,
     };
   }
+
   return {
     ...collage,
     border: collage.border ?? fresh.border,

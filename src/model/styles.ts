@@ -109,6 +109,7 @@ export function currentStyle(collage: Collage): StyleName | null {
   return (
     STYLE_ORDER.find((name) => {
       const s = STYLES[name].settings;
+
       return (
         collage.gap === s.gap &&
         collage.margin === s.margin &&

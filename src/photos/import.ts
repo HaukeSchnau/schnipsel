@@ -16,6 +16,7 @@ import type { Photo } from "../model/collage";
 
 /** Long-edge cap for the working copy. */
 const WORK_MAX = 1440;
+
 /** Long-edge size of the swatch used for palette extraction. */
 const SWATCH_MAX = 24;
 
@@ -28,10 +29,12 @@ function ensureDir() {
 /** Filesystem-safe, stable key for an asset id (which is a content:// URI on Android). */
 function keyFor(assetId: string): string {
   let h = 0x811c9dc5;
+
   for (let i = 0; i < assetId.length; i++) {
     h ^= assetId.charCodeAt(i);
     h = Math.imul(h, 0x01000193);
   }
+
   return (h >>> 0).toString(16).padStart(8, "0") + "-" + assetId.length.toString(36);
 }
 
@@ -44,8 +47,10 @@ async function renderTo(
   const ref = await ImageManipulator.manipulate(sourceUri).resize(size).renderAsync();
   const saved = await ref.saveAsync({ format: SaveFormat.JPEG, compress });
   const dimensions = { width: ref.width, height: ref.height };
+
   if (target.exists) target.delete();
   await new File(saved.uri).move(target);
+
   return dimensions;
 }
 
@@ -58,6 +63,7 @@ export type PickedAsset = { id: string; width: number; height: number };
 export async function importPhotos(assets: PickedAsset[]): Promise<Photo[]> {
   ensureDir();
   const out: Photo[] = [];
+
   for (const asset of assets) {
     const key = keyFor(asset.id);
     const work = new File(photosDir, `${key}.jpg`);
@@ -90,6 +96,7 @@ export async function importPhotos(assets: PickedAsset[]): Promise<Photo[]> {
 
     out.push({ id: asset.id, uri: work.uri, ...dimensions, swatchUri: swatch.uri });
   }
+
   return out;
 }
 
@@ -97,10 +104,12 @@ export async function importPhotos(assets: PickedAsset[]): Promise<Photo[]> {
 export function pruneUnused(keepAssetIds: Iterable<string>) {
   if (!photosDir.exists) return;
   const keep = new Set<string>();
+
   for (const id of keepAssetIds) {
     keep.add(`${keyFor(id)}.jpg`);
     keep.add(`${keyFor(id)}.swatch.jpg`);
   }
+
   for (const entry of photosDir.list()) {
     if (entry instanceof File && !keep.has(entry.name)) entry.delete();
   }

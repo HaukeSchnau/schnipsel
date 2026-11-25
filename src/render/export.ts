@@ -31,6 +31,7 @@ export async function renderCollage(
   const size = canvasSize(collage);
   const element = createElement(CollageScene, { collage, photos, images, size });
   const image = await drawAsImage(element, size);
+
   if (!image) throw new Error("Skia konnte die Collage nicht rendern.");
 
   const bytes = image.encodeToBytes(ImageFormat.JPEG, JPEG_QUALITY);
@@ -39,6 +40,7 @@ export async function renderCollage(
   const file = new File(Paths.cache, `schnipsel-${Date.now()}.jpg`);
   file.create({ overwrite: true });
   file.write(bytes);
+
   return { uri: file.uri, ...size };
 }
 

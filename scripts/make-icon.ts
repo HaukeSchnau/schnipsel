@@ -21,6 +21,7 @@
  *     --width 900 out/splash.svg assets/splash-icon.png
  */
 const SIZE = 1024;
+
 /** Radius every launcher mask is guaranteed to keep. */
 const SAFE = (SIZE * (72 / 108)) / 2;
 
@@ -81,6 +82,7 @@ function monoScene(prints: Print[], gap: number): string {
   const layers = prints
     .map((p) => `${rect(p, gap, "#000000")}\n${rect(p, 0, "#FFFFFF")}`)
     .join("\n");
+
   return `<mask id="prints" maskUnits="userSpaceOnUse" x="0" y="0" width="${SIZE}" height="${SIZE}">
       <rect width="${SIZE}" height="${SIZE}" fill="black" />
       ${layers}
@@ -113,6 +115,7 @@ function splash(): string {
   const pad = 40;
   const textY = bottom + 130;
   const height = textY + pad + 30;
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${height.toFixed(0)}" viewBox="0 ${(top - pad).toFixed(0)} ${SIZE} ${height.toFixed(0)}">
 ${DROP}
 ${colourScene(prints, 30)}
@@ -124,15 +127,20 @@ ${colourScene(prints, 30)}
 const out = process.argv[2] ?? "./icon";
 
 const worst = Math.max(...ADAPTIVE.map(reach));
+
 if (worst > SAFE) {
   console.error(`FEHLER: Motiv ragt ${(worst - SAFE).toFixed(0)}px aus der sicheren Zone`);
   process.exit(1);
 }
 
 await Bun.write(`${out}/icon.svg`, svg(colourScene(SQUARE, 30), BG, DROP));
+
 await Bun.write(`${out}/adaptive-foreground.svg`, svg(colourScene(ADAPTIVE, 26), null, DROP));
+
 await Bun.write(`${out}/adaptive-monochrome.svg`, svg(monoScene(ADAPTIVE, 12), null));
+
 await Bun.write(`${out}/splash.svg`, splash());
 
 console.log(`geschrieben nach ${out}`);
+
 console.log(`sichere Zone Radius ${SAFE.toFixed(0)}px, Motiv reicht bis ${worst.toFixed(0)}px`);

@@ -33,6 +33,7 @@ import { theme } from "../ui/theme";
 
 const COLUMNS = 3;
 const PAGE = 120;
+
 /** Above this the layout generator falls back to a plain grid, so we stop here. */
 const MAX_SELECTION = 9;
 
@@ -47,8 +48,10 @@ const RANGE_LABELS: Record<Range, string> = {
 function since(range: Range): number | null {
   if (range === "all") return null;
   const now = new Date();
+
   if (range === "today")
     return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
   return now.getTime() - 7 * 24 * 60 * 60 * 1000;
 }
 
@@ -74,7 +77,9 @@ export function PickerScreen({
       .orderBy({ key: AssetField.CREATION_TIME, ascending: false })
       .limit(PAGE)
       .offset(offset);
+
     const from = since(currentRange);
+
     if (from !== null) query = query.gte(AssetField.CREATION_TIME, from);
 
     const page = await query.exeForMetadata();
@@ -102,11 +107,13 @@ export function PickerScreen({
 
   const confirm = useCallback(async () => {
     setImporting(true);
+
     try {
       const picked = selection
         .map((id) => assets.find((a) => a.id === id))
         .filter((a): a is AssetMetadata => !!a)
         .map((a) => ({ id: a.id, width: a.width ?? 1000, height: a.height ?? 1000 }));
+
       onDone(await importPhotos(picked));
     } finally {
       setImporting(false);
@@ -159,6 +166,7 @@ export function PickerScreen({
         }}
         renderItem={({ item }) => {
           const position = selection.indexOf(item.id);
+
           return (
             <Pressable onPress={() => toggle(item.id)} style={{ margin: 1 }}>
               <Image

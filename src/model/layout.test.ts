@@ -60,12 +60,14 @@ describe("suggestLayouts", () => {
     const best = suggestLayouts([2 / 3, 16 / 9, 2 / 3], STORY).find(
       (s) => s.recipe.id === "3/hero-top",
     )!;
+
     expect(best.assignment[0]).toBe(1);
   });
 
   test("suggestions come back best first", () => {
     const all = suggestLayouts([1, 1, 1, 1], STORY);
     expect(all.length).toBeGreaterThan(1);
+
     for (let i = 1; i < all.length; i++) {
       expect(all[i].score).toBeGreaterThanOrEqual(all[i - 1].score);
     }
@@ -96,6 +98,7 @@ describe("suggestLayouts", () => {
     const best = suggestLayouts([2 / 3, 16 / 9, 2 / 3], STORY).find(
       (s) => s.recipe.id === "3/hero-top",
     )!;
+
     const layers = layersFrom(best, ["a", "b", "c"]);
     expect(layers.map((l) => l.photoId)).toEqual(["b", "a", "c"]);
     expect(new Set(layers.map((l) => l.id)).size).toBe(3);

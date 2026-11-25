@@ -15,15 +15,18 @@ export function snapDelta(edges: number[], targets: number[], threshold: number)
   "worklet";
   let best = 0;
   let bestDistance = threshold;
+
   for (let i = 0; i < edges.length; i++) {
     for (let j = 0; j < targets.length; j++) {
       const delta = targets[j] - edges[i];
       const distance = delta < 0 ? -delta : delta;
+
       if (distance < bestDistance) {
         bestDistance = distance;
         best = delta;
       }
     }
   }
+
   return best;
 }

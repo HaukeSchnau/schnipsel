@@ -12,6 +12,7 @@
  */
 
 export type Rect = { x: number; y: number; w: number; h: number };
+
 export type Size = { width: number; height: number };
 
 /** A layer's box, relative to the content area. `rotation` is in degrees. */
@@ -101,10 +102,13 @@ export const SAFE_ZONE = { top: 250 / 1920, bottom: 310 / 1920 };
 
 /** Largest gutter the gap slider can produce, as a fraction of the short edge. */
 export const MAX_GAP = 0.05;
+
 /** Largest outer border the margin slider can produce, same units. */
 export const MAX_MARGIN = 0.12;
+
 /** Largest scatter angle in degrees at `scatter === 1`. */
 export const MAX_SCATTER_DEG = 7;
+
 /** Widest paper border, as a fraction of the short edge. */
 export const MAX_BORDER = 0.035;
 
@@ -152,7 +156,9 @@ export function swapPhotos(collage: Collage, aId: string, bId: string): Collage 
   if (aId === bId) return collage;
   const a = collage.layers.find((l) => l.id === aId);
   const b = collage.layers.find((l) => l.id === bId);
+
   if (!a || !b) return collage;
+
   return {
     ...collage,
     layers: collage.layers.map((layer) =>

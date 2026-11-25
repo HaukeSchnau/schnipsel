@@ -93,6 +93,7 @@ export function EditorScreen({
     extractPalette(photos)
       .then((colors) => !cancelled && setPalette(colors))
       .catch(() => !cancelled && setPalette([]));
+
     return () => {
       cancelled = true;
     };
@@ -107,22 +108,27 @@ export function EditorScreen({
     if (preview.width === 0) return null;
     const content = contentRect(collage, preview);
     const gut = gutter(collage, preview);
+
     const boxes = collage.layers.map((layer) => ({
       layer,
       box: layerRect(layer.frame, content, gut),
     }));
+
     const activeBox = boxes.find((b) => b.layer.id === selected?.id)?.box ?? null;
     const border = borderWidth(collage, preview);
     const hitBoxes = layerHitBoxes(collage, preview);
+
     const targets: SnapTargets = {
       vertical: [content.x, content.x + content.w / 2, content.x + content.w],
       horizontal: [content.y, content.y + content.h / 2, content.y + content.h],
     };
+
     for (const { layer, box } of boxes) {
       if (layer.id === selected?.id) continue;
       targets.vertical.push(box.x, box.x + box.w / 2, box.x + box.w);
       targets.horizontal.push(box.y, box.y + box.h / 2, box.y + box.h);
     }
+
     return { content, gut, activeBox, targets, border, hitBoxes };
   }, [collage, preview, selected?.id]);
 
@@ -130,6 +136,7 @@ export function EditorScreen({
     (transform: { tx: number; ty: number; scale: number }) => {
       if (!selected || !geometry?.activeBox) return;
       const layer = collage.layers.find((l) => l.id === selected.id);
+
       if (!layer) return;
       const box = geometry.activeBox;
       const centre = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
@@ -139,6 +146,7 @@ export function EditorScreen({
         ...current,
         layers: current.layers.map((l) => {
           if (l.id !== layer.id) return l;
+
           return selected.mode === "frame"
             ? commitFrame(
                 l,
@@ -161,10 +169,13 @@ export function EditorScreen({
   const handleTap = useCallback(
     (x: number, y: number) => {
       const layer = hitTest(collage, preview, x, y);
+
       if (!layer) {
         setSelected(null);
+
         return;
       }
+
       tick();
       setSelected((current) =>
         current?.id === layer.id
@@ -178,6 +189,7 @@ export function EditorScreen({
   const handleDoubleTap = useCallback(
     (x: number, y: number) => {
       const layer = hitTest(collage, preview, x, y);
+
       if (!layer) return;
       tick();
       apply((current) => ({
@@ -214,6 +226,7 @@ export function EditorScreen({
     (sourceId: string, targetId: string | null) => {
       setSwap(null);
       swapTarget.value = null;
+
       if (!targetId || targetId === sourceId) return;
       tick();
       apply((current) => swapPhotos(current, sourceId, targetId));
@@ -229,17 +242,22 @@ export function EditorScreen({
 
     const begin = () => {
       "worklet";
+
       if (!target) return;
       activeGestures.value += 1;
+
       if (!live.value)
         live.value = { layerId: target.id, mode: target.mode, tx: 0, ty: 0, scale: 1 };
     };
+
     const finish = () => {
       "worklet";
       activeGestures.value = Math.max(0, activeGestures.value - 1);
+
       if (activeGestures.value > 0 || !live.value) return;
       const { tx, ty, scale } = live.value;
       live.value = null;
+
       if (tx !== 0 || ty !== 0 || scale !== 1) runOnJS(commit)({ tx, ty, scale });
     };
 
@@ -248,9 +266,11 @@ export function EditorScreen({
       .onBegin(begin)
       .onUpdate((e) => {
         "worklet";
+
         if (!live.value) return;
         let tx = e.translationX;
         let ty = e.translationY;
+
         // Frames snap to guides; a crop inside a frame has nothing to snap to.
         if (target?.mode === "frame" && box && targets) {
           tx += snapDelta(
@@ -264,6 +284,7 @@ export function EditorScreen({
             threshold,
           );
         }
+
         live.value = { ...live.value, tx, ty };
       })
       .onFinalize(finish);
@@ -272,6 +293,7 @@ export function EditorScreen({
       .onBegin(begin)
       .onUpdate((e) => {
         "worklet";
+
         if (!live.value) return;
         live.value = { ...live.value, scale: e.scale };
       })
@@ -295,11 +317,13 @@ export function EditorScreen({
     // Hold, then drag, to trade two photos between their frames. Pan activates
     // on movement and this one only after a hold, so they never both fire.
     const boxes = geometry?.hitBoxes ?? [];
+
     const swapDrag = Gesture.Pan()
       .activateAfterLongPress(350)
       .onStart((e) => {
         "worklet";
         const id = pickAt(boxes, e.x, e.y);
+
         if (!id) return;
         sourceForSwap.value = id;
         swapTarget.value = id;
@@ -307,8 +331,10 @@ export function EditorScreen({
       })
       .onUpdate((e) => {
         "worklet";
+
         if (!sourceForSwap.value) return;
         const id = pickAt(boxes, e.x, e.y);
+
         if (id !== swapTarget.value) {
           swapTarget.value = id;
           runOnJS(hoverSwap)(id);
@@ -318,6 +344,7 @@ export function EditorScreen({
         "worklet";
         const source = sourceForSwap.value;
         sourceForSwap.value = null;
+
         if (source) runOnJS(finishSwap)(source, swapTarget.value);
       });
 
@@ -344,10 +371,12 @@ export function EditorScreen({
 
   const exportCollage = useCallback(async () => {
     setBusy(true);
+
     try {
       const result = await renderCollage(collage, photosById, images);
       await saveToGallery(result.uri).catch(() => {});
       const share = await shareToInstagramStory(result.uri);
+
       if (share === "no-instagram") {
         Alert.alert(
           "In der Galerie gespeichert",
@@ -369,12 +398,16 @@ export function EditorScreen({
   const useBlurredBackground = useCallback(() => {
     apply((c) => {
       const current = c.background;
+
       const index =
         current.kind === "photo"
           ? (photos.findIndex((p) => p.id === current.photoId) + 1) % photos.length
           : 0;
+
       const photo = photos[index];
+
       if (!photo) return c;
+
       return { ...c, background: { kind: "photo", photoId: photo.id, blur: 0.5, dim: 0.25 } };
     });
   }, [apply, photos]);
@@ -558,11 +591,14 @@ function commitFrame(
     w: box.w * scale,
     h: box.h * scale,
   };
+
   const frame = rectToFrame(moved, content, gut, layer.frame.rotation);
   const image = images[layer.photoId];
+
   const aspect = image
     ? image.width() / image.height()
     : (photosById[layer.photoId]?.width ?? 1) / (photosById[layer.photoId]?.height ?? 1);
+
   // The crop lives inside the paper border, not inside the card.
   return { ...layer, frame, crop: clampCrop(layer.crop, insetRect(moved, border), aspect) };
 }
@@ -578,6 +614,7 @@ function commitCrop(
   images: Record<string, { width(): number; height(): number }>,
 ): Layer {
   const image = images[layer.photoId];
+
   const aspect = image
     ? image.width() / image.height()
     : (photosById[layer.photoId]?.width ?? 1) / (photosById[layer.photoId]?.height ?? 1);
@@ -589,11 +626,13 @@ function commitCrop(
 
   const zoomed = { ...layer.crop, scale: layer.crop.scale * scale, offsetX: 0, offsetY: 0 };
   const fitted = imageDestRect(aspect, inner, zoomed);
+
   const crop = {
     ...zoomed,
     offsetX: (movedX - fitted.x) / inner.w,
     offsetY: (movedY - fitted.y) / inner.h,
   };
+
   return { ...layer, crop: clampCrop(crop, inner, aspect) };
 }
 

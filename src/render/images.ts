@@ -15,6 +15,7 @@ export type ImageMap = Record<string, SkImage>;
 
 export async function loadSkImage(uri: string): Promise<SkImage | null> {
   const data = await Skia.Data.fromURI(uri);
+
   return Skia.Image.MakeImageFromEncoded(data);
 }
 
@@ -31,14 +32,17 @@ export function useSkImages(photos: Photo[]): ImageMap {
     for (const id of Object.keys(cache.current)) {
       if (!wanted.has(id)) delete cache.current[id];
     }
+
     if (missing.length === 0) {
       setImages({ ...cache.current });
+
       return;
     }
 
     Promise.all(
       missing.map(async (photo) => {
         const image = await loadSkImage(photo.uri);
+
         if (image) cache.current[photo.id] = image;
       }),
     ).then(() => {

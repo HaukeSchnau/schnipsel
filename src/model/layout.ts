@@ -33,10 +33,12 @@ const UNIT: Rect = { x: 0, y: 0, w: 1, h: 1 };
 function rows(rect: Rect, ...weights: number[]): Rect[] {
   const total = weights.reduce((a, b) => a + b, 0);
   let y = rect.y;
+
   return weights.map((weight) => {
     const h = (rect.h * weight) / total;
     const band = { x: rect.x, y, w: rect.w, h };
     y += h;
+
     return band;
   });
 }
@@ -45,10 +47,12 @@ function rows(rect: Rect, ...weights: number[]): Rect[] {
 function cols(rect: Rect, ...weights: number[]): Rect[] {
   const total = weights.reduce((a, b) => a + b, 0);
   let x = rect.x;
+
   return weights.map((weight) => {
     const w = (rect.w * weight) / total;
     const column = { x, y: rect.y, w, h: rect.h };
     x += w;
+
     return column;
   });
 }
@@ -181,6 +185,7 @@ export type Suggestion = {
  */
 function mismatch(photoAspect: number, slotAspect: number): number {
   const loss = Math.log(photoAspect / slotAspect);
+
   return loss * loss;
 }
 
@@ -191,8 +196,10 @@ function mismatch(photoAspect: number, slotAspect: number): number {
 function hierarchy(slots: Rect[]): number {
   if (slots.length < 2) return 0;
   const mean = 1 / slots.length;
+
   const variance =
     slots.reduce((sum, slot) => sum + (slot.w * slot.h - mean) ** 2, 0) / slots.length;
+
   return Math.sqrt(variance) / mean;
 }
 
@@ -205,19 +212,24 @@ const HIERARCHY_BONUS = 0.05;
 function permutations(n: number): number[][] {
   if (n <= 1) return [[0]];
   const out: number[][] = [];
+
   const walk = (prefix: number[], rest: number[]) => {
     if (rest.length === 0) {
       out.push(prefix);
+
       return;
     }
+
     for (let i = 0; i < rest.length; i++) {
       walk([...prefix, rest[i]], [...rest.slice(0, i), ...rest.slice(i + 1)]);
     }
   };
+
   walk(
     [],
     Array.from({ length: n }, (_, i) => i),
   );
+
   return out;
 }
 
@@ -225,6 +237,7 @@ function permutations(n: number): number[][] {
 function genericGrid(count: number): Recipe {
   const columnCount = Math.ceil(Math.sqrt(count));
   const rowCount = Math.ceil(count / columnCount);
+
   return { id: `${count}/auto`, slots: grid(columnCount, rowCount).slice(0, count) };
 }
 
@@ -242,36 +255,45 @@ export function suggestLayouts(
   { overlapping = false }: { overlapping?: boolean } = {},
 ): Suggestion[] {
   const count = photoAspects.length;
+
   if (count === 0) return [];
 
   const candidates = RECIPES.filter(
     (r) => r.slots.length === count && (overlapping || !r.overlapping),
   );
+
   const recipes = candidates.length > 0 ? candidates : [genericGrid(count)];
   // 6 photos is 720 permutations per recipe — cheap, and above that the search
   // stops paying for itself, so we keep the photos in the order they were tapped.
   const orders = count <= 6 ? permutations(count) : [Array.from({ length: count }, (_, i) => i)];
 
   const suggestions: Suggestion[] = [];
+
   for (const recipe of recipes) {
     const slotAspects = recipe.slots.map((s) => (s.w / s.h) * contentAspect);
     const bonus = HIERARCHY_BONUS * hierarchy(recipe.slots);
     let best: Suggestion | null = null;
+
     for (const order of orders) {
       let cropCost = 0;
+
       for (let i = 0; i < count; i++) cropCost += mismatch(photoAspects[order[i]], slotAspects[i]);
+
       if (!best || cropCost < best.cropCost) {
         best = { recipe, assignment: order, cropCost, score: cropCost - bonus };
       }
     }
+
     if (best) suggestions.push(best);
   }
+
   return suggestions.sort((a, b) => a.score - b.score);
 }
 
 export function layersFrom(suggestion: Suggestion, photoIds: string[]): Layer[] {
   return suggestion.recipe.slots.map((slot, i) => {
     const photoId = photoIds[suggestion.assignment[i]];
+
     return {
       id: `${suggestion.recipe.id}:${i}:${photoId}`,
       photoId,

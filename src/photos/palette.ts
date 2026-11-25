@@ -27,24 +27,30 @@ function vibrance(r: number, g: number, b: number): number {
   const saturation = max === 0 ? 0 : (max - min) / max;
   // Mid-tones read best behind photos; pure black and blown-out white do not.
   const tone = 1 - Math.abs((max + min) / 2 / 255 - 0.5) * 1.6;
+
   return 0.25 + saturation * Math.max(0, tone);
 }
 
 async function swatchesOf(photo: Photo): Promise<Bucket[]> {
   const image = await loadSkImage(photo.swatchUri);
+
   if (!image) return [];
   const width = image.width();
   const height = image.height();
+
   const pixels = image.readPixels(0, 0, {
     width,
     height,
     colorType: ColorType.RGBA_8888,
     alphaType: AlphaType.Unpremul,
   });
+
   image.dispose();
+
   if (!pixels) return [];
 
   const buckets = new Map<number, Bucket>();
+
   for (let i = 0; i < width * height; i++) {
     const r = Number(pixels[i * 4]);
     const g = Number(pixels[i * 4 + 1]);
@@ -58,12 +64,14 @@ async function swatchesOf(photo: Photo): Promise<Bucket[]> {
     bucket.weight += vibrance(r, g, b);
     buckets.set(key, bucket);
   }
+
   return [...buckets.values()];
 }
 
 /** Up to `count` background colours drawn from the given photos, best first. */
 export async function extractPalette(photos: Photo[], count = 5): Promise<string[]> {
   const all: Bucket[] = [];
+
   for (const photo of photos) all.push(...(await swatchesOf(photo)));
 
   return all

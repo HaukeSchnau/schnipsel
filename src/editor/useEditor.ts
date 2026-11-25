@@ -33,11 +33,13 @@ export function useEditor() {
 
   useEffect(() => {
     const draft = loadDraft();
+
     if (draft) {
       collageRef.current = draft.collage;
       setCollage(draft.collage);
       setPhotos(draft.photos);
     }
+
     setRestored(true);
   }, []);
 
@@ -55,13 +57,17 @@ export function useEditor() {
   const apply = useCallback(
     (mutate: (current: Collage) => Collage, { history = true }: { history?: boolean } = {}) => {
       const current = collageRef.current;
+
       if (!current) return;
       const next = mutate(current);
+
       if (next === current) return;
+
       if (history) {
         undoStack.current = [...undoStack.current.slice(-(UNDO_LIMIT - 1)), current];
         setCanUndo(true);
       }
+
       collageRef.current = { ...next, updatedAt: Date.now() };
       setCollage(collageRef.current);
     },
@@ -71,6 +77,7 @@ export function useEditor() {
   const undo = useCallback(() => {
     const previous = undoStack.current.pop();
     setCanUndo(undoStack.current.length > 0);
+
     if (previous) {
       collageRef.current = previous;
       setCollage(previous);
@@ -85,6 +92,7 @@ export function useEditor() {
     } catch {
       // Housekeeping must never block starting a collage.
     }
+
     const base = emptyCollage(`c-${Date.now()}`);
     const ranked = rank(base, nextPhotos);
     suggestions.current = ranked;
@@ -109,9 +117,11 @@ export function useEditor() {
   const shuffle = useCallback(() => {
     apply((current) => {
       if (suggestions.current.length === 0) suggestions.current = rank(current, photos);
+
       if (suggestions.current.length === 0) return current;
       suggestionIndex.current = (suggestionIndex.current + 1) % suggestions.current.length;
       const next = suggestions.current[suggestionIndex.current];
+
       return {
         ...current,
         layers: layersFrom(
@@ -146,6 +156,7 @@ function rank(collage: Collage, photos: Photo[]): Suggestion[] {
   if (photos.length === 0) return [];
   const canvas = canvasSize(collage);
   const content = contentRect(collage, canvas);
+
   return suggestLayouts(
     photos.map((p) => p.width / p.height),
     content.w / content.h,
