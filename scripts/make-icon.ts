@@ -24,9 +24,9 @@ const SIZE = 1024;
 /** Radius every launcher mask is guaranteed to keep. */
 const SAFE = (SIZE * (72 / 108)) / 2;
 
-const BG = '#17130F';
-const PAPER = '#FBF8F2';
-const PHOTO = ['#C2643F', '#7D8C5C', '#4A6B7C'];
+const BG = "#17130F";
+const PAPER = "#FBF8F2";
+const PHOTO = ["#C2643F", "#7D8C5C", "#4A6B7C"];
 
 type Print = { cx: number; cy: number; w: number; h: number; angle: number };
 
@@ -55,7 +55,7 @@ function reach({ cx, cy, w, h }: Print): number {
   return Math.hypot(cx - SIZE / 2, cy - SIZE / 2) + Math.hypot(w / 2, h / 2);
 }
 
-function rect(p: Print, inset: number, fill: string, filter = ''): string {
+function rect(p: Print, inset: number, fill: string, filter = ""): string {
   return `<rect x="${(p.cx - p.w / 2 - inset).toFixed(1)}" y="${(p.cy - p.h / 2 - inset).toFixed(1)}"
       width="${(p.w + inset * 2).toFixed(1)}" height="${(p.h + inset * 2).toFixed(1)}"
       fill="${fill}"${filter} transform="rotate(${p.angle} ${p.cx.toFixed(1)} ${p.cy.toFixed(1)})" />`;
@@ -67,9 +67,9 @@ function colourScene(prints: Print[], border: number): string {
     .map(
       (p, i) =>
         rect(p, 0, PAPER, ' filter="url(#drop)"') +
-        rect({ ...p, w: p.w - border * 2, h: p.h - border * 2 }, 0, PHOTO[i % PHOTO.length])
+        rect({ ...p, w: p.w - border * 2, h: p.h - border * 2 }, 0, PHOTO[i % PHOTO.length]),
     )
-    .join('\n');
+    .join("\n");
 }
 
 /**
@@ -79,8 +79,8 @@ function colourScene(prints: Print[], border: number): string {
  */
 function monoScene(prints: Print[], gap: number): string {
   const layers = prints
-    .map((p) => `${rect(p, gap, '#000000')}\n${rect(p, 0, '#FFFFFF')}`)
-    .join('\n');
+    .map((p) => `${rect(p, gap, "#000000")}\n${rect(p, 0, "#FFFFFF")}`)
+    .join("\n");
   return `<mask id="prints" maskUnits="userSpaceOnUse" x="0" y="0" width="${SIZE}" height="${SIZE}">
       <rect width="${SIZE}" height="${SIZE}" fill="black" />
       ${layers}
@@ -92,14 +92,14 @@ const DROP = `<defs><filter id="drop" x="-30%" y="-30%" width="160%" height="160
     <feDropShadow dx="0" dy="10" stdDeviation="14" flood-opacity="0.35" />
   </filter></defs>`;
 
-const svg = (body: string, background: string | null, defs = '') =>
+const svg = (body: string, background: string | null, defs = "") =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
-${defs}${background ? `<rect width="${SIZE}" height="${SIZE}" fill="${background}" />` : ''}
+${defs}${background ? `<rect width="${SIZE}" height="${SIZE}" fill="${background}" />` : ""}
 ${body}
 </svg>`;
 
 /** The dedication on the launch screen. The whole point of a gift app. */
-const DEDICATION = 'für Janelle';
+const DEDICATION = "für Janelle";
 
 /**
  * The splash is the icon motif with a line under it. expo-splash-screen centres
@@ -121,7 +121,7 @@ ${colourScene(prints, 30)}
 </svg>`;
 }
 
-const out = process.argv[2] ?? './icon';
+const out = process.argv[2] ?? "./icon";
 
 const worst = Math.max(...ADAPTIVE.map(reach));
 if (worst > SAFE) {

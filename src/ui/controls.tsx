@@ -5,27 +5,23 @@
  * decisions and a slider can be worked with one thumb. Everything here is
  * built on gesture-handler so dragging never waits on the JS thread.
  */
-import { type ReactNode, useCallback } from 'react';
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-} from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import { type ReactNode, useCallback } from "react";
+import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 
-import { theme } from './theme';
+import { theme } from "./theme";
 
 export function Button({
   label,
   onPress,
-  tone = 'normal',
+  tone = "normal",
   style,
 }: {
   label: string;
   onPress: () => void;
-  tone?: 'normal' | 'primary' | 'quiet';
+  tone?: "normal" | "primary" | "quiet";
   style?: ViewStyle;
 }) {
   return (
@@ -33,13 +29,13 @@ export function Button({
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        tone === 'primary' && styles.buttonPrimary,
-        tone === 'quiet' && styles.buttonQuiet,
+        tone === "primary" && styles.buttonPrimary,
+        tone === "quiet" && styles.buttonQuiet,
         pressed && { opacity: 0.7 },
         style,
       ]}
     >
-      <Text style={[styles.buttonLabel, tone === 'primary' && styles.buttonLabelPrimary]}>
+      <Text style={[styles.buttonLabel, tone === "primary" && styles.buttonLabelPrimary]}>
         {label}
       </Text>
     </Pressable>
@@ -136,11 +132,11 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     borderRadius: theme.radius,
     backgroundColor: theme.surfaceHigh,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonPrimary: { backgroundColor: theme.accent },
-  buttonQuiet: { backgroundColor: 'transparent' },
-  buttonLabel: { color: theme.text, fontSize: 15, fontWeight: '600' },
+  buttonQuiet: { backgroundColor: "transparent" },
+  buttonLabel: { color: theme.text, fontSize: 15, fontWeight: "600" },
   buttonLabelPrimary: { color: theme.bg },
   chip: {
     paddingHorizontal: 14,
@@ -151,17 +147,17 @@ const styles = StyleSheet.create({
     borderColor: theme.line,
   },
   chipActive: { backgroundColor: theme.accent, borderColor: theme.accent },
-  chipLabel: { color: theme.textDim, fontSize: 13, fontWeight: '600' },
+  chipLabel: { color: theme.textDim, fontSize: 13, fontWeight: "600" },
   chipLabelActive: { color: theme.bg },
-  sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  sliderRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 6 },
   sliderLabel: { color: theme.textDim, fontSize: 13, width: 74 },
   sliderTrack: {
     flex: 1,
     height: 34,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   sliderTrackLine: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     height: 4,
@@ -169,13 +165,13 @@ const styles = StyleSheet.create({
     backgroundColor: theme.line,
   },
   sliderFill: {
-    position: 'absolute',
+    position: "absolute",
     height: 4,
     borderRadius: 2,
     backgroundColor: theme.accent,
   },
   sliderKnob: {
-    position: 'absolute',
+    position: "absolute",
     width: 22,
     height: 22,
     marginLeft: -11,

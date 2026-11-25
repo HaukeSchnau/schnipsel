@@ -27,15 +27,15 @@ bun run check   # Format, Lint und Typen (vp check)
 
 ## Wie es aufgebaut ist
 
-| Datei | Aufgabe |
-| --- | --- |
-| `src/model/collage.ts` | Dokumentmodell. Positionen relativ, nie in Pixeln. |
-| `src/model/geometry.ts` | Rechnet relativ → Pixel. Preview und Export gehen beide hier durch. |
-| `src/model/layout.ts` | Layout-Rezepte und die Suche nach dem, das am wenigsten beschneidet. |
-| `src/render/CollageScene.tsx` | Die Skia-Szene. Editor und Export rendern dasselbe Element. |
-| `src/render/export.ts` | 1080×1920 offscreen, JPEG q90. |
-| `src/share/instagram.ts` | `ADD_TO_STORY`-Intent. |
-| `src/editor/useEditor.ts` | Collage, Undo, Autosave. |
+| Datei                         | Aufgabe                                                              |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `src/model/collage.ts`        | Dokumentmodell. Positionen relativ, nie in Pixeln.                   |
+| `src/model/geometry.ts`       | Rechnet relativ → Pixel. Preview und Export gehen beide hier durch.  |
+| `src/model/layout.ts`         | Layout-Rezepte und die Suche nach dem, das am wenigsten beschneidet. |
+| `src/render/CollageScene.tsx` | Die Skia-Szene. Editor und Export rendern dasselbe Element.          |
+| `src/render/export.ts`        | 1080×1920 offscreen, JPEG q90.                                       |
+| `src/share/instagram.ts`      | `ADD_TO_STORY`-Intent.                                               |
+| `src/editor/useEditor.ts`     | Collage, Undo, Autosave.                                             |
 
 Zwei Entscheidungen tragen den Rest:
 

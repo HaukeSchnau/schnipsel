@@ -4,16 +4,16 @@
  * Two screens and no navigation library: pick photos, then edit. The draft is
  * restored on launch, so "where was I" is answered before it's asked.
  */
-import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-import { useEditor } from './src/editor/useEditor';
-import { EditorScreen } from './src/screens/EditorScreen';
-import { PickerScreen } from './src/screens/PickerScreen';
-import { theme } from './src/ui/theme';
+import { useEditor } from "./src/editor/useEditor";
+import { EditorScreen } from "./src/screens/EditorScreen";
+import { PickerScreen } from "./src/screens/PickerScreen";
+import { theme } from "./src/ui/theme";
 
 export default function App() {
   const editor = useEditor();
@@ -23,7 +23,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
           <StatusBar style="light" />
           {!editor.restored ? (
             <View style={styles.splash}>
@@ -57,5 +57,5 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.bg },
-  splash: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  splash: { flex: 1, alignItems: "center", justifyContent: "center" },
 });

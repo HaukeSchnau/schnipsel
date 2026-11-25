@@ -12,7 +12,7 @@ export const SNAP_THRESHOLD_RATIO = 0.022;
 
 /** The nudge to add to a translation so the nearest edge lands on a guide. */
 export function snapDelta(edges: number[], targets: number[], threshold: number): number {
-  'worklet';
+  "worklet";
   let best = 0;
   let bestDistance = threshold;
   for (let i = 0; i < edges.length; i++) {

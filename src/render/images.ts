@@ -6,10 +6,10 @@
  * and hands back a plain lookup, so the scene stays a pure function of props
  * (and therefore renders identically offscreen at export time).
  */
-import { useEffect, useRef, useState } from 'react';
-import { Skia, type SkImage } from '@shopify/react-native-skia';
+import { useEffect, useRef, useState } from "react";
+import { Skia, type SkImage } from "@shopify/react-native-skia";
 
-import type { Photo } from '../model/collage';
+import type { Photo } from "../model/collage";
 
 export type ImageMap = Record<string, SkImage>;
 
@@ -40,7 +40,7 @@ export function useSkImages(photos: Photo[]): ImageMap {
       missing.map(async (photo) => {
         const image = await loadSkImage(photo.uri);
         if (image) cache.current[photo.id] = image;
-      })
+      }),
     ).then(() => {
       if (!cancelled) setImages({ ...cache.current });
     });

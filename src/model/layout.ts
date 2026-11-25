@@ -12,7 +12,7 @@
  * offer a layout with one dominant photo — and the search gets a small nudge
  * towards those when the crop cost is close.
  */
-import { DEFAULT_CROP, type Layer, type Rect } from './collage';
+import { DEFAULT_CROP, type Layer, type Rect } from "./collage";
 
 export type Recipe = {
   id: string;
@@ -55,13 +55,13 @@ function cols(rect: Rect, ...weights: number[]): Rect[] {
 
 const grid = (columnCount: number, rowCount: number): Rect[] =>
   rows(UNIT, ...Array(rowCount).fill(1)).flatMap((band) =>
-    cols(band, ...Array(columnCount).fill(1))
+    cols(band, ...Array(columnCount).fill(1)),
   );
 
 /** Builds a recipe from a band split, e.g. `stacked([52, 48], [1, 2])`. */
 function stacked(weights: number[], perBand: number[]): Rect[] {
   return rows(UNIT, ...weights).flatMap((band, i) =>
-    perBand[i] === 1 ? [band] : cols(band, ...Array(perBand[i]).fill(1))
+    perBand[i] === 1 ? [band] : cols(band, ...Array(perBand[i]).fill(1)),
   );
 }
 
@@ -74,58 +74,55 @@ export const RECIPES: Recipe[] = (() => {
   const leftHeavy5 = cols(UNIT, 55, 45);
 
   return [
-    { id: '1/full', slots: [UNIT] },
+    { id: "1/full", slots: [UNIT] },
 
-    { id: '2/stack', slots: rows(UNIT, 1, 1) },
-    { id: '2/hero-top', slots: two },
-    { id: '2/hero-bottom', slots: twoLow },
-    { id: '2/side', slots: cols(UNIT, 1, 1) },
+    { id: "2/stack", slots: rows(UNIT, 1, 1) },
+    { id: "2/hero-top", slots: two },
+    { id: "2/hero-bottom", slots: twoLow },
+    { id: "2/side", slots: cols(UNIT, 1, 1) },
 
-    { id: '3/rows', slots: rows(UNIT, 1, 1, 1) },
-    { id: '3/band', slots: rows(UNIT, 30, 40, 30) },
-    { id: '3/hero-top', slots: stacked([52, 48], [1, 2]) },
-    { id: '3/hero-bottom', slots: stacked([48, 52], [2, 1]) },
+    { id: "3/rows", slots: rows(UNIT, 1, 1, 1) },
+    { id: "3/band", slots: rows(UNIT, 30, 40, 30) },
+    { id: "3/hero-top", slots: stacked([52, 48], [1, 2]) },
+    { id: "3/hero-bottom", slots: stacked([48, 52], [2, 1]) },
     {
-      id: '3/hero-left',
+      id: "3/hero-left",
       slots: [leftHeavy[0], ...rows(leftHeavy[1], 1, 1)],
     },
     {
-      id: '3/hero-right',
+      id: "3/hero-right",
       slots: [...rows(rightHeavy[0], 1, 1), rightHeavy[1]],
     },
 
-    { id: '4/quad', slots: grid(2, 2) },
-    { id: '4/rows', slots: rows(UNIT, 1, 1, 1, 1) },
-    { id: '4/hero-top', slots: stacked([46, 54], [1, 3]) },
-    { id: '4/hero-bottom', slots: stacked([54, 46], [3, 1]) },
-    { id: '4/sandwich', slots: stacked([38, 26, 36], [1, 2, 1]) },
+    { id: "4/quad", slots: grid(2, 2) },
+    { id: "4/rows", slots: rows(UNIT, 1, 1, 1, 1) },
+    { id: "4/hero-top", slots: stacked([46, 54], [1, 3]) },
+    { id: "4/hero-bottom", slots: stacked([54, 46], [3, 1]) },
+    { id: "4/sandwich", slots: stacked([38, 26, 36], [1, 2, 1]) },
     {
-      id: '4/hero-left',
+      id: "4/hero-left",
       slots: [leftHeavy4[0], ...rows(leftHeavy4[1], 1, 1, 1)],
     },
 
-    { id: '5/2-3', slots: stacked([48, 52], [2, 3]) },
-    { id: '5/3-2', slots: stacked([52, 48], [3, 2]) },
-    { id: '5/hero-top', slots: stacked([42, 29, 29], [1, 2, 2]) },
-    { id: '5/hero-bottom', slots: stacked([29, 29, 42], [2, 2, 1]) },
+    { id: "5/2-3", slots: stacked([48, 52], [2, 3]) },
+    { id: "5/3-2", slots: stacked([52, 48], [3, 2]) },
+    { id: "5/hero-top", slots: stacked([42, 29, 29], [1, 2, 2]) },
+    { id: "5/hero-bottom", slots: stacked([29, 29, 42], [2, 2, 1]) },
     {
-      id: '5/hero-left',
-      slots: [
-        leftHeavy5[0],
-        ...rows(leftHeavy5[1], 1, 1).flatMap((band) => cols(band, 1, 1)),
-      ],
+      id: "5/hero-left",
+      slots: [leftHeavy5[0], ...rows(leftHeavy5[1], 1, 1).flatMap((band) => cols(band, 1, 1))],
     },
 
-    { id: '6/2x3', slots: grid(2, 3) },
-    { id: '6/3x2', slots: grid(3, 2) },
-    { id: '6/1-2-3', slots: stacked([34, 33, 33], [1, 2, 3]) },
-    { id: '6/3-2-1', slots: stacked([33, 33, 34], [3, 2, 1]) },
-    { id: '6/hero-top', slots: stacked([40, 30, 30], [1, 2, 3]) },
+    { id: "6/2x3", slots: grid(2, 3) },
+    { id: "6/3x2", slots: grid(3, 2) },
+    { id: "6/1-2-3", slots: stacked([34, 33, 33], [1, 2, 3]) },
+    { id: "6/3-2-1", slots: stacked([33, 33, 34], [3, 2, 1]) },
+    { id: "6/hero-top", slots: stacked([40, 30, 30], [1, 2, 3]) },
 
     // Prints laid on top of one another. These need `overlapping` styling to
     // make any sense — see the flag's docs.
     {
-      id: '2/aufeinander',
+      id: "2/aufeinander",
       overlapping: true,
       slots: [
         { x: 0.02, y: 0.04, w: 0.72, h: 0.5 },
@@ -133,7 +130,7 @@ export const RECIPES: Recipe[] = (() => {
       ],
     },
     {
-      id: '3/faecher',
+      id: "3/faecher",
       overlapping: true,
       slots: [
         { x: 0.02, y: 0.03, w: 0.66, h: 0.36 },
@@ -142,7 +139,7 @@ export const RECIPES: Recipe[] = (() => {
       ],
     },
     {
-      id: '3/hero-aufgelegt',
+      id: "3/hero-aufgelegt",
       overlapping: true,
       slots: [
         { x: 0, y: 0, w: 1, h: 0.74 },
@@ -151,7 +148,7 @@ export const RECIPES: Recipe[] = (() => {
       ],
     },
     {
-      id: '4/stapel',
+      id: "4/stapel",
       overlapping: true,
       slots: [
         { x: 0.04, y: 0.02, w: 0.5, h: 0.34 },
@@ -217,7 +214,10 @@ function permutations(n: number): number[][] {
       walk([...prefix, rest[i]], [...rest.slice(0, i), ...rest.slice(i + 1)]);
     }
   };
-  walk([], Array.from({ length: n }, (_, i) => i));
+  walk(
+    [],
+    Array.from({ length: n }, (_, i) => i),
+  );
   return out;
 }
 
@@ -239,13 +239,13 @@ export function suggestLayouts(
   photoAspects: number[],
   contentAspect: number,
   /** Whether photos currently have the paper edge that overlaps need to read. */
-  { overlapping = false }: { overlapping?: boolean } = {}
+  { overlapping = false }: { overlapping?: boolean } = {},
 ): Suggestion[] {
   const count = photoAspects.length;
   if (count === 0) return [];
 
   const candidates = RECIPES.filter(
-    (r) => r.slots.length === count && (overlapping || !r.overlapping)
+    (r) => r.slots.length === count && (overlapping || !r.overlapping),
   );
   const recipes = candidates.length > 0 ? candidates : [genericGrid(count)];
   // 6 photos is 720 permutations per recipe — cheap, and above that the search

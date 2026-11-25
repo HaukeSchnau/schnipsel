@@ -7,7 +7,7 @@
  * about one afternoon, and scrolling back through a camera roll to find it is
  * the slowest part of the whole job.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,38 +16,39 @@ import {
   Text,
   View,
   useWindowDimensions,
-} from 'react-native';
-import { Image } from 'expo-image';
+} from "react-native";
+import { Image } from "expo-image";
 import {
   AssetField,
   MediaType,
   Query,
   usePermissions,
   type AssetMetadata,
-} from 'expo-media-library';
+} from "expo-media-library";
 
-import { importPhotos } from '../photos/import';
-import type { Photo } from '../model/collage';
-import { Button, Chip } from '../ui/controls';
-import { theme } from '../ui/theme';
+import { importPhotos } from "../photos/import";
+import type { Photo } from "../model/collage";
+import { Button, Chip } from "../ui/controls";
+import { theme } from "../ui/theme";
 
 const COLUMNS = 3;
 const PAGE = 120;
 /** Above this the layout generator falls back to a plain grid, so we stop here. */
 const MAX_SELECTION = 9;
 
-type Range = 'all' | 'today' | 'week';
+type Range = "all" | "today" | "week";
 
 const RANGE_LABELS: Record<Range, string> = {
-  all: 'Alle',
-  today: 'Heute',
-  week: 'Diese Woche',
+  all: "Alle",
+  today: "Heute",
+  week: "Diese Woche",
 };
 
 function since(range: Range): number | null {
-  if (range === 'all') return null;
+  if (range === "all") return null;
   const now = new Date();
-  if (range === 'today') return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (range === "today")
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   return now.getTime() - 7 * 24 * 60 * 60 * 1000;
 }
 
@@ -58,8 +59,8 @@ export function PickerScreen({
   onDone: (photos: Photo[]) => void;
   onCancel?: () => void;
 }) {
-  const [permission, requestPermission] = usePermissions({ granularPermissions: ['photo'] });
-  const [range, setRange] = useState<Range>('all');
+  const [permission, requestPermission] = usePermissions({ granularPermissions: ["photo"] });
+  const [range, setRange] = useState<Range>("all");
   const [assets, setAssets] = useState<AssetMetadata[]>([]);
   const [exhausted, setExhausted] = useState(false);
   const [selection, setSelection] = useState<string[]>([]);
@@ -67,22 +68,19 @@ export function PickerScreen({
   const { width } = useWindowDimensions();
   const tile = Math.floor((width - 2 * (COLUMNS - 1)) / COLUMNS);
 
-  const fetchPage = useCallback(
-    async (offset: number, currentRange: Range) => {
-      let query = new Query()
-        .eq(AssetField.MEDIA_TYPE, MediaType.IMAGE)
-        .orderBy({ key: AssetField.CREATION_TIME, ascending: false })
-        .limit(PAGE)
-        .offset(offset);
-      const from = since(currentRange);
-      if (from !== null) query = query.gte(AssetField.CREATION_TIME, from);
+  const fetchPage = useCallback(async (offset: number, currentRange: Range) => {
+    let query = new Query()
+      .eq(AssetField.MEDIA_TYPE, MediaType.IMAGE)
+      .orderBy({ key: AssetField.CREATION_TIME, ascending: false })
+      .limit(PAGE)
+      .offset(offset);
+    const from = since(currentRange);
+    if (from !== null) query = query.gte(AssetField.CREATION_TIME, from);
 
-      const page = await query.exeForMetadata();
-      setExhausted(page.length < PAGE);
-      setAssets((current) => (offset === 0 ? page : [...current, ...page]));
-    },
-    []
-  );
+    const page = await query.exeForMetadata();
+    setExhausted(page.length < PAGE);
+    setAssets((current) => (offset === 0 ? page : [...current, ...page]));
+  }, []);
 
   useEffect(() => {
     if (permission?.granted) {
@@ -98,7 +96,7 @@ export function PickerScreen({
         ? current.filter((x) => x !== id)
         : current.length >= MAX_SELECTION
           ? current
-          : [...current, id]
+          : [...current, id],
     );
   }, []);
 
@@ -115,7 +113,12 @@ export function PickerScreen({
     }
   }, [assets, selection, onDone]);
 
-  if (!permission) return <Centered><ActivityIndicator color={theme.accent} /></Centered>;
+  if (!permission)
+    return (
+      <Centered>
+        <ActivityIndicator color={theme.accent} />
+      </Centered>
+    );
 
   if (!permission.granted) {
     return (
@@ -185,9 +188,9 @@ export function PickerScreen({
         <Button
           label={
             importing
-              ? 'Lädt …'
+              ? "Lädt …"
               : selection.length === 0
-                ? 'Fotos auswählen'
+                ? "Fotos auswählen"
                 : `Weiter mit ${selection.length}`
           }
           tone="primary"
@@ -205,13 +208,13 @@ function Centered({ children }: { children: React.ReactNode }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.bg },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 },
-  explain: { color: theme.textDim, fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 32 },
+  explain: { color: theme.textDim, fontSize: 15, textAlign: "center", lineHeight: 22 },
   header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, gap: 12 },
-  title: { color: theme.text, fontSize: 26, fontWeight: '700' },
-  chips: { flexDirection: 'row', gap: 8 },
+  title: { color: theme.text, fontSize: 26, fontWeight: "700" },
+  chips: { flexDirection: "row", gap: 8 },
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: 6,
     right: 6,
     minWidth: 24,
@@ -219,12 +222,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: 12,
     backgroundColor: theme.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  badgeLabel: { color: theme.bg, fontSize: 13, fontWeight: '700' },
+  badgeLabel: { color: theme.bg, fontSize: 13, fontWeight: "700" },
   footer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
     padding: 16,
     borderTopWidth: 1,

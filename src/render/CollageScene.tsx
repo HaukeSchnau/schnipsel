@@ -12,7 +12,7 @@
  * thread. It is the identity transform at rest, which is what the exporter
  * sees, so this costs nothing in fidelity.
  */
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 import {
   Blur,
   Fill,
@@ -23,11 +23,11 @@ import {
   Rect,
   RoundedRect,
   Shadow,
-} from '@shopify/react-native-skia';
-import type { SkImage, Transforms3d } from '@shopify/react-native-skia';
-import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
+} from "@shopify/react-native-skia";
+import type { SkImage, Transforms3d } from "@shopify/react-native-skia";
+import { useDerivedValue, type SharedValue } from "react-native-reanimated";
 
-import { SAFE_ZONE, type Collage, type Layer, type Photo, type Size } from '../model/collage';
+import { SAFE_ZONE, type Collage, type Layer, type Photo, type Size } from "../model/collage";
 import {
   borderWidth,
   contentRect,
@@ -38,14 +38,14 @@ import {
   layerAngle,
   layerRect,
   shadowSpec,
-} from '../model/geometry';
-import type { ImageMap } from './images';
+} from "../model/geometry";
+import type { ImageMap } from "./images";
 
 /** A gesture in progress. `scale` is relative to the committed state. */
 export type LiveTransform = {
   layerId: string;
   /** `frame` moves the photo's box, `crop` moves the photo inside its box. */
-  mode: 'frame' | 'crop';
+  mode: "frame" | "crop";
   tx: number;
   ty: number;
   scale: number;
@@ -54,7 +54,7 @@ export type LiveTransform = {
 const IDENTITY: Transforms3d = [];
 
 /** The paper a print is on. Slightly warm — pure white glares next to photos. */
-const PAPER = '#FBF8F2';
+const PAPER = "#FBF8F2";
 
 export type CollageSceneProps = {
   collage: Collage;
@@ -85,13 +85,13 @@ export function CollageScene({
   const border = borderWidth(collage, size);
   const shadow = shadowSpec(collage, size);
   const background = collage.background;
-  const backgroundImage = background.kind === 'photo' ? images[background.photoId] : undefined;
+  const backgroundImage = background.kind === "photo" ? images[background.photoId] : undefined;
 
   return (
     <Group>
-      <Fill color={background.kind === 'color' ? background.color : '#000000'} />
+      <Fill color={background.kind === "color" ? background.color : "#000000"} />
 
-      {backgroundImage && background.kind === 'photo' ? (
+      {backgroundImage && background.kind === "photo" ? (
         <>
           {/* Oversized so the blur has pixels to reach for at the edges. */}
           <Image
@@ -173,7 +173,7 @@ function LayerMarker({
   collage: Collage;
   layerId: string;
   size: Size;
-  kind: 'selection' | 'source' | 'target';
+  kind: "selection" | "source" | "target";
 }) {
   const layer = collage.layers.find((l) => l.id === layerId);
   if (!layer) return null;
@@ -185,18 +185,16 @@ function LayerMarker({
     { rotate: (layerAngle(layer, collage.scatter) * Math.PI) / 180 },
   ];
   const origin = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
-  const stroke = Math.max(1.5, size.width * (kind === 'selection' ? 0.004 : 0.008));
+  const stroke = Math.max(1.5, size.width * (kind === "selection" ? 0.004 : 0.008));
 
   return (
     <Group transform={transform} origin={origin}>
-      {kind === 'target' ? (
-        <RoundedRect rect={shape} color="rgba(247,231,206,0.3)" />
-      ) : null}
+      {kind === "target" ? <RoundedRect rect={shape} color="rgba(247,231,206,0.3)" /> : null}
       <RoundedRect
         rect={shape}
         style="stroke"
         strokeWidth={stroke}
-        color={kind === 'source' ? 'rgba(247,231,206,0.55)' : '#F7E7CE'}
+        color={kind === "source" ? "rgba(247,231,206,0.55)" : "#F7E7CE"}
       />
     </Group>
   );
@@ -216,7 +214,7 @@ function LiveGroup({
 }) {
   const transform = useDerivedValue<Transforms3d>(() => {
     const l = live.value;
-    if (!l || l.layerId !== layerId || l.mode !== 'frame') return IDENTITY;
+    if (!l || l.layerId !== layerId || l.mode !== "frame") return IDENTITY;
     return [{ translateX: l.tx }, { translateY: l.ty }, { scale: l.scale }];
   }, [live, layerId]);
 
@@ -253,7 +251,9 @@ function LayerBody({
   const dest = imageDestRect(image.width() / image.height(), inner, layer.crop);
   const centre = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
   const card = rrect(rect(box.x, box.y, box.w, box.h), radius, radius);
-  const photo = <Image image={image} fit="fill" x={dest.x} y={dest.y} width={dest.w} height={dest.h} />;
+  const photo = (
+    <Image image={image} fit="fill" x={dest.x} y={dest.y} width={dest.w} height={dest.h} />
+  );
 
   return (
     <Group transform={[{ rotate: (angle * Math.PI) / 180 }]} origin={centre}>
@@ -298,7 +298,7 @@ function LiveCrop({
 }) {
   const transform = useDerivedValue<Transforms3d>(() => {
     const l = live.value;
-    if (!l || l.layerId !== layerId || l.mode !== 'crop') return IDENTITY;
+    if (!l || l.layerId !== layerId || l.mode !== "crop") return IDENTITY;
     return [{ translateX: l.tx }, { translateY: l.ty }, { scale: l.scale }];
   }, [live, layerId]);
 

@@ -9,15 +9,15 @@
  * a bigger file. (That changes if we ever ship the collage as a transparent
  * sticker layer instead of a background — see notes/schnipsel.md.)
  */
-import { createElement } from 'react';
-import { drawAsImage, ImageFormat } from '@shopify/react-native-skia';
-import { File, Paths } from 'expo-file-system';
-import { Asset } from 'expo-media-library';
+import { createElement } from "react";
+import { drawAsImage, ImageFormat } from "@shopify/react-native-skia";
+import { File, Paths } from "expo-file-system";
+import { Asset } from "expo-media-library";
 
-import { CollageScene } from './CollageScene';
-import { canvasSize } from '../model/geometry';
-import type { Collage, Photo } from '../model/collage';
-import type { ImageMap } from './images';
+import { CollageScene } from "./CollageScene";
+import { canvasSize } from "../model/geometry";
+import type { Collage, Photo } from "../model/collage";
+import type { ImageMap } from "./images";
 
 const JPEG_QUALITY = 90;
 
@@ -26,12 +26,12 @@ export type ExportResult = { uri: string; width: number; height: number };
 export async function renderCollage(
   collage: Collage,
   photos: Record<string, Photo>,
-  images: ImageMap
+  images: ImageMap,
 ): Promise<ExportResult> {
   const size = canvasSize(collage);
   const element = createElement(CollageScene, { collage, photos, images, size });
   const image = await drawAsImage(element, size);
-  if (!image) throw new Error('Skia konnte die Collage nicht rendern.');
+  if (!image) throw new Error("Skia konnte die Collage nicht rendern.");
 
   const bytes = image.encodeToBytes(ImageFormat.JPEG, JPEG_QUALITY);
   image.dispose();

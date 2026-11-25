@@ -8,18 +8,18 @@
  * collage can show, so this costs nothing visually — it just means the editor
  * and the export share one modest set of files.
  */
-import { Asset } from 'expo-media-library';
-import { Directory, File, Paths } from 'expo-file-system';
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import { Asset } from "expo-media-library";
+import { Directory, File, Paths } from "expo-file-system";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 
-import type { Photo } from '../model/collage';
+import type { Photo } from "../model/collage";
 
 /** Long-edge cap for the working copy. */
 const WORK_MAX = 1440;
 /** Long-edge size of the swatch used for palette extraction. */
 const SWATCH_MAX = 24;
 
-const photosDir = new Directory(Paths.document, 'photos');
+const photosDir = new Directory(Paths.document, "photos");
 
 function ensureDir() {
   if (!photosDir.exists) photosDir.create({ intermediates: true, idempotent: true });
@@ -32,14 +32,14 @@ function keyFor(assetId: string): string {
     h ^= assetId.charCodeAt(i);
     h = Math.imul(h, 0x01000193);
   }
-  return (h >>> 0).toString(16).padStart(8, '0') + '-' + assetId.length.toString(36);
+  return (h >>> 0).toString(16).padStart(8, "0") + "-" + assetId.length.toString(36);
 }
 
 async function renderTo(
   sourceUri: string,
   target: File,
   size: { width?: number; height?: number },
-  compress: number
+  compress: number,
 ): Promise<{ width: number; height: number }> {
   const ref = await ImageManipulator.manipulate(sourceUri).resize(size).renderAsync();
   const saved = await ref.saveAsync({ format: SaveFormat.JPEG, compress });
@@ -81,7 +81,12 @@ export async function importPhotos(assets: PickedAsset[]): Promise<Photo[]> {
     const landscape = asset.width >= asset.height;
     const size = landscape ? { width: WORK_MAX } : { height: WORK_MAX };
     const dimensions = await renderTo(sourceUri, work, size, 0.92);
-    await renderTo(work.uri, swatch, landscape ? { width: SWATCH_MAX } : { height: SWATCH_MAX }, 0.8);
+    await renderTo(
+      work.uri,
+      swatch,
+      landscape ? { width: SWATCH_MAX } : { height: SWATCH_MAX },
+      0.8,
+    );
 
     out.push({ id: asset.id, uri: work.uri, ...dimensions, swatchUri: swatch.uri });
   }

@@ -6,13 +6,13 @@
  * "I had something nice and it's gone" is the one failure this app can't
  * afford.
  */
-import { File, Paths } from 'expo-file-system';
+import { File, Paths } from "expo-file-system";
 
-import type { Collage, Photo } from '../model/collage';
-import { emptyCollage } from '../model/collage';
+import type { Collage, Photo } from "../model/collage";
+import { emptyCollage } from "../model/collage";
 
 const DRAFT_VERSION = 3;
-const draftFile = new File(Paths.document, 'draft.json');
+const draftFile = new File(Paths.document, "draft.json");
 
 export type Draft = { version: number; collage: Collage; photos: Photo[] };
 

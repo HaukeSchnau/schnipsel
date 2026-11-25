@@ -6,10 +6,10 @@
  * chosen from scratch. Runs on the 24px swatch copies made at import, so this
  * is a handful of pixels, not a megabyte.
  */
-import { AlphaType, ColorType } from '@shopify/react-native-skia';
+import { AlphaType, ColorType } from "@shopify/react-native-skia";
 
-import { loadSkImage } from '../render/images';
-import type { Photo } from '../model/collage';
+import { loadSkImage } from "../render/images";
+import type { Photo } from "../model/collage";
 
 /** Bits dropped per channel when bucketing — 5 gives an 8x8x8 histogram. */
 const SHIFT = 5;
@@ -17,7 +17,7 @@ const SHIFT = 5;
 type Bucket = { r: number; g: number; b: number; n: number; weight: number };
 
 function hex(r: number, g: number, b: number): string {
-  return '#' + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join('');
+  return "#" + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
 }
 
 /** Favours colours with some life in them over the muddy average of a photo. */

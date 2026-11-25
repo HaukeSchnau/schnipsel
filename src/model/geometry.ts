@@ -19,7 +19,7 @@ import {
   type Layer,
   type Rect,
   type Size,
-} from './collage';
+} from "./collage";
 
 /** Gutter width in canvas pixels, driven by the gap slider. */
 export function gutter(collage: Collage, canvas: Size): number {
@@ -109,7 +109,7 @@ export function shadowSpec(collage: Collage, canvas: Size) {
   const short = Math.min(canvas.width, canvas.height);
   return {
     blur: collage.shadow * 0.026 * short,
-    dy: collage.shadow * 0.010 * short,
+    dy: collage.shadow * 0.01 * short,
     opacity: collage.shadow * 0.38,
   };
 }
@@ -127,7 +127,7 @@ export function insetRect(rect: Rect, by: number): Rect {
  */
 export function imageDestRect(imageAspect: number, rect: Rect, crop: Crop): Rect {
   const rectAspect = rect.w / rect.h;
-  const matchHeight = crop.fit === 'cover' ? imageAspect > rectAspect : imageAspect <= rectAspect;
+  const matchHeight = crop.fit === "cover" ? imageAspect > rectAspect : imageAspect <= rectAspect;
   let w: number;
   let h: number;
   if (matchHeight) {
@@ -149,9 +149,9 @@ export function imageDestRect(imageAspect: number, rect: Rect, crop: Crop): Rect
 
 /** Keeps a `cover` crop from exposing the frame's background when panned. */
 export function clampCrop(crop: Crop, rect: Rect, imageAspect: number): Crop {
-  const scale = Math.max(crop.fit === 'cover' ? 1 : 0.2, Math.min(6, crop.scale));
+  const scale = Math.max(crop.fit === "cover" ? 1 : 0.2, Math.min(6, crop.scale));
   const dest = imageDestRect(imageAspect, rect, { ...crop, scale });
-  if (crop.fit === 'contain') return { ...crop, scale };
+  if (crop.fit === "contain") return { ...crop, scale };
   const slackX = Math.max(0, (dest.w - rect.w) / 2 / rect.w);
   const slackY = Math.max(0, (dest.h - rect.h) / 2 / rect.h);
   return {
@@ -196,7 +196,7 @@ export function layerHitBoxes(collage: Collage, canvas: Size): HitBox[] {
 
 /** Id of the topmost box under a point, or null. Safe to call on the UI thread. */
 export function pickAt(boxes: HitBox[], px: number, py: number): string | null {
-  'worklet';
+  "worklet";
   for (let i = boxes.length - 1; i >= 0; i--) {
     const b = boxes[i];
     const dx = px - b.cx;

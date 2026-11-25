@@ -5,13 +5,13 @@
  * versions — cheap, because a collage is a few hundred bytes of numbers, not
  * pixels. That same property is what makes the archive/remix idea free later.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { emptyCollage, type Collage, type Photo } from '../model/collage';
-import { canvasSize, contentRect } from '../model/geometry';
-import { layersFrom, suggestLayouts, type Suggestion } from '../model/layout';
-import { pruneUnused } from '../photos/import';
-import { loadDraft, saveDraft } from '../storage/draft';
+import { emptyCollage, type Collage, type Photo } from "../model/collage";
+import { canvasSize, contentRect } from "../model/geometry";
+import { layersFrom, suggestLayouts, type Suggestion } from "../model/layout";
+import { pruneUnused } from "../photos/import";
+import { loadDraft, saveDraft } from "../storage/draft";
 
 const UNDO_LIMIT = 50;
 
@@ -45,10 +45,7 @@ export function useEditor() {
     if (collage && restored) saveDraft(collage, photos);
   }, [collage, photos, restored]);
 
-  const photosById = useMemo(
-    () => Object.fromEntries(photos.map((p) => [p.id, p])),
-    [photos]
-  );
+  const photosById = useMemo(() => Object.fromEntries(photos.map((p) => [p.id, p])), [photos]);
 
   /**
    * `history: false` is for continuous changes — a slider being dragged, a
@@ -68,7 +65,7 @@ export function useEditor() {
       collageRef.current = { ...next, updatedAt: Date.now() };
       setCollage(collageRef.current);
     },
-    []
+    [],
   );
 
   const undo = useCallback(() => {
@@ -97,7 +94,13 @@ export function useEditor() {
     setPhotos(nextPhotos);
     collageRef.current =
       ranked.length > 0
-        ? { ...base, layers: layersFrom(ranked[0], nextPhotos.map((p) => p.id)) }
+        ? {
+            ...base,
+            layers: layersFrom(
+              ranked[0],
+              nextPhotos.map((p) => p.id),
+            ),
+          }
         : base;
     setCollage(collageRef.current);
   }, []);
@@ -109,7 +112,13 @@ export function useEditor() {
       if (suggestions.current.length === 0) return current;
       suggestionIndex.current = (suggestionIndex.current + 1) % suggestions.current.length;
       const next = suggestions.current[suggestionIndex.current];
-      return { ...current, layers: layersFrom(next, photos.map((p) => p.id)) };
+      return {
+        ...current,
+        layers: layersFrom(
+          next,
+          photos.map((p) => p.id),
+        ),
+      };
     });
   }, [apply, photos]);
 
@@ -140,6 +149,6 @@ function rank(collage: Collage, photos: Photo[]): Suggestion[] {
   return suggestLayouts(
     photos.map((p) => p.width / p.height),
     content.w / content.h,
-    { overlapping: collage.border > 0 }
+    { overlapping: collage.border > 0 },
   );
 }
