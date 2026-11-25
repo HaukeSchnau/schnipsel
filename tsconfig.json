@@ -1,10 +1,8 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": ["@schnau/tsconfig", "expo/tsconfig.base"],
   "compilerOptions": {
-    "strict": true,
-    // The pure model code is tested with `bun test`. Expo's base config sets
-    // customConditions, which stops @types/bun from being picked up
-    // automatically, so `bun:test` has to be named here explicitly.
+    // scripts/ runs on Bun and writes with Bun.write.
     "types": ["bun"]
-  }
+  },
+  "exclude": ["node_modules", "android", "ios", "dist", "tools/oxlint/anti-slop"]
 }

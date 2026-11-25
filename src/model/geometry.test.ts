@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'vite-plus/test';
 
 import { CANVAS_SIZES, DEFAULT_CROP, emptyCollage, type Collage } from './collage';
 import {

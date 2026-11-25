@@ -21,8 +21,8 @@ Danach reicht `bun start` für jede weitere Änderung.
 Für eine eigenständige APK ohne Metro: `bunx eas build --profile preview --platform android`.
 
 ```bash
-bun test        # Geometrie und Layout-Generator
-bun typecheck
+bun run test    # Geometrie und Layout-Generator (vp test run)
+bun run check   # Format, Lint und Typen (vp check)
 ```
 
 ## Wie es aufgebaut ist
