@@ -1,7 +1,16 @@
 {
   "name": "schnipsel",
   "version": "1.0.0",
+  "private": true,
   "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "test": "vp test run",
+    "check": "vp check"
+  },
   "dependencies": {
     "@shopify/react-native-skia": "2.6.2",
     "expo": "~57.0.15",
@@ -22,19 +31,16 @@
     "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
+    "@oxlint/plugins": "1.94.0",
+    "@schnau/tsconfig": "^0.1.0",
     "@types/bun": "^1.4.0",
     "@types/react": "~19.2.2",
-    "tsrs": "^7.1.0-beta.tsrs5"
+    "tsrs": "7.1.0-beta.tsrs4",
+    "vite-plus": "1.8.0"
   },
-  "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "test": "bun test",
-    "typecheck": "tsrs --noEmit"
+  "engines": {
+    "node": ">=26"
   },
-  "private": true,
   "trustedDependencies": [
     "@shopify/react-native-skia"
   ]

@@ -7,16 +7,15 @@
  * permanently, because with direct manipulation something is always about to
  * get knocked out of place.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Canvas } from '@shopify/react-native-skia';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { runOnJS, useSharedValue } from 'react-native-reanimated';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Canvas } from "@shopify/react-native-skia";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { runOnJS, useSharedValue } from "react-native-reanimated";
 
-import { swapPhotos, type Collage, type Layer, type Photo } from '../model/collage';
+import { swapPhotos, type Collage, type Layer, type Photo } from "../model/collage";
 import {
   borderWidth,
-  canvasSize,
   clampCrop,
   contentRect,
   fitCanvas,
@@ -28,18 +27,18 @@ import {
   layerRect,
   pickAt,
   rectToFrame,
-} from '../model/geometry';
-import { CollageScene, type LiveTransform } from '../render/CollageScene';
-import { useSkImages } from '../render/images';
-import { renderCollage, saveToGallery } from '../render/export';
-import { shareToInstagramStory } from '../share/instagram';
-import { extractPalette } from '../photos/palette';
-import { snapDelta, SNAP_THRESHOLD_RATIO, type SnapTargets } from '../editor/snapping';
-import { applyStyle, currentStyle, STYLES, STYLE_ORDER } from '../model/styles';
-import { Button, Chip, Slider, tick, Toolbar } from '../ui/controls';
-import { theme } from '../ui/theme';
+} from "../model/geometry";
+import { CollageScene, type LiveTransform } from "../render/CollageScene";
+import { useSkImages } from "../render/images";
+import { renderCollage, saveToGallery } from "../render/export";
+import { shareToInstagramStory } from "../share/instagram";
+import { extractPalette } from "../photos/palette";
+import { snapDelta, SNAP_THRESHOLD_RATIO, type SnapTargets } from "../editor/snapping";
+import { applyStyle, currentStyle, STYLES, STYLE_ORDER } from "../model/styles";
+import { Button, Chip, Slider, tick, Toolbar } from "../ui/controls";
+import { theme } from "../ui/theme";
 
-type Selection = { id: string; mode: 'frame' | 'crop' } | null;
+type Selection = { id: string; mode: "frame" | "crop" } | null;
 
 export function EditorScreen({
   collage,
@@ -81,18 +80,19 @@ export function EditorScreen({
 
   const preview = useMemo(
     () => (available.width > 0 ? fitCanvas(collage, available) : { width: 0, height: 0 }),
-    [collage, available]
+    [collage, available],
   );
 
   // Reads the 24px swatch copies made at import, so this is a few hundred
   // pixels per photo rather than a decode.
-  const photoKey = photos.map((p) => p.id).join('|');
+  const photoKey = photos.map((p) => p.id).join("|");
   useEffect(() => {
     if (photos.length === 0) return;
     let cancelled = false;
     extractPalette(photos)
       .then((colors) => !cancelled && setPalette(colors))
       .catch(() => !cancelled && setPalette([]));
+
     return () => {
       cancelled = true;
     };
@@ -107,22 +107,27 @@ export function EditorScreen({
     if (preview.width === 0) return null;
     const content = contentRect(collage, preview);
     const gut = gutter(collage, preview);
+
     const boxes = collage.layers.map((layer) => ({
       layer,
       box: layerRect(layer.frame, content, gut),
     }));
+
     const activeBox = boxes.find((b) => b.layer.id === selected?.id)?.box ?? null;
     const border = borderWidth(collage, preview);
     const hitBoxes = layerHitBoxes(collage, preview);
+
     const targets: SnapTargets = {
       vertical: [content.x, content.x + content.w / 2, content.x + content.w],
       horizontal: [content.y, content.y + content.h / 2, content.y + content.h],
     };
+
     for (const { layer, box } of boxes) {
       if (layer.id === selected?.id) continue;
       targets.vertical.push(box.x, box.x + box.w / 2, box.x + box.w);
       targets.horizontal.push(box.y, box.y + box.h / 2, box.y + box.h);
     }
+
     return { content, gut, activeBox, targets, border, hitBoxes };
   }, [collage, preview, selected?.id]);
 
@@ -130,6 +135,7 @@ export function EditorScreen({
     (transform: { tx: number; ty: number; scale: number }) => {
       if (!selected || !geometry?.activeBox) return;
       const layer = collage.layers.find((l) => l.id === selected.id);
+
       if (!layer) return;
       const box = geometry.activeBox;
       const centre = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
@@ -139,7 +145,8 @@ export function EditorScreen({
         ...current,
         layers: current.layers.map((l) => {
           if (l.id !== layer.id) return l;
-          return selected.mode === 'frame'
+
+          return selected.mode === "frame"
             ? commitFrame(
                 l,
                 box,
@@ -149,47 +156,59 @@ export function EditorScreen({
                 geometry.gut,
                 geometry.border,
                 photosById,
-                images
+                images,
               )
             : commitCrop(l, box, centre, { tx, ty, scale }, geometry.border, photosById, images);
         }),
       }));
     },
-    [apply, collage.layers, geometry, images, photosById, selected]
+    [apply, collage.layers, geometry, images, photosById, selected],
   );
 
   const handleTap = useCallback(
     (x: number, y: number) => {
       const layer = hitTest(collage, preview, x, y);
+
       if (!layer) {
         setSelected(null);
+
         return;
       }
+
       tick();
       setSelected((current) =>
         current?.id === layer.id
-          ? { id: layer.id, mode: current.mode === 'frame' ? 'crop' : 'frame' }
-          : { id: layer.id, mode: 'frame' }
+          ? { id: layer.id, mode: current.mode === "frame" ? "crop" : "frame" }
+          : { id: layer.id, mode: "frame" },
       );
     },
-    [collage, preview]
+    [collage, preview],
   );
 
   const handleDoubleTap = useCallback(
     (x: number, y: number) => {
       const layer = hitTest(collage, preview, x, y);
+
       if (!layer) return;
       tick();
       apply((current) => ({
         ...current,
         layers: current.layers.map((l) =>
           l.id === layer.id
-            ? { ...l, crop: { ...l.crop, fit: l.crop.fit === 'cover' ? 'contain' : 'cover', offsetX: 0, offsetY: 0 } }
-            : l
+            ? {
+                ...l,
+                crop: {
+                  ...l.crop,
+                  fit: l.crop.fit === "cover" ? "contain" : "cover",
+                  offsetX: 0,
+                  offsetY: 0,
+                },
+              }
+            : l,
         ),
       }));
     },
-    [apply, collage, preview]
+    [apply, collage, preview],
   );
 
   const beginSwap = useCallback((id: string) => {
@@ -206,11 +225,12 @@ export function EditorScreen({
     (sourceId: string, targetId: string | null) => {
       setSwap(null);
       swapTarget.value = null;
+
       if (!targetId || targetId === sourceId) return;
       tick();
       apply((current) => swapPhotos(current, sourceId, targetId));
     },
-    [apply, swapTarget]
+    [apply, swapTarget],
   );
 
   const gesture = useMemo(() => {
@@ -220,17 +240,23 @@ export function EditorScreen({
     const threshold = preview.width * SNAP_THRESHOLD_RATIO;
 
     const begin = () => {
-      'worklet';
+      "worklet";
+
       if (!target) return;
       activeGestures.value += 1;
-      if (!live.value) live.value = { layerId: target.id, mode: target.mode, tx: 0, ty: 0, scale: 1 };
+
+      if (!live.value)
+        live.value = { layerId: target.id, mode: target.mode, tx: 0, ty: 0, scale: 1 };
     };
+
     const finish = () => {
-      'worklet';
+      "worklet";
       activeGestures.value = Math.max(0, activeGestures.value - 1);
+
       if (activeGestures.value > 0 || !live.value) return;
       const { tx, ty, scale } = live.value;
       live.value = null;
+
       if (tx !== 0 || ty !== 0 || scale !== 1) runOnJS(commit)({ tx, ty, scale });
     };
 
@@ -238,15 +264,26 @@ export function EditorScreen({
       .averageTouches(true)
       .onBegin(begin)
       .onUpdate((e) => {
-        'worklet';
+        "worklet";
+
         if (!live.value) return;
         let tx = e.translationX;
         let ty = e.translationY;
+
         // Frames snap to guides; a crop inside a frame has nothing to snap to.
-        if (target?.mode === 'frame' && box && targets) {
-          tx += snapDelta([box.x + tx, box.x + box.w / 2 + tx, box.x + box.w + tx], targets.vertical, threshold);
-          ty += snapDelta([box.y + ty, box.y + box.h / 2 + ty, box.y + box.h + ty], targets.horizontal, threshold);
+        if (target?.mode === "frame" && box && targets) {
+          tx += snapDelta(
+            [box.x + tx, box.x + box.w / 2 + tx, box.x + box.w + tx],
+            targets.vertical,
+            threshold,
+          );
+          ty += snapDelta(
+            [box.y + ty, box.y + box.h / 2 + ty, box.y + box.h + ty],
+            targets.horizontal,
+            threshold,
+          );
         }
+
         live.value = { ...live.value, tx, ty };
       })
       .onFinalize(finish);
@@ -254,7 +291,8 @@ export function EditorScreen({
     const pinch = Gesture.Pinch()
       .onBegin(begin)
       .onUpdate((e) => {
-        'worklet';
+        "worklet";
+
         if (!live.value) return;
         live.value = { ...live.value, scale: e.scale };
       })
@@ -264,50 +302,55 @@ export function EditorScreen({
       .numberOfTaps(2)
       .maxDistance(16)
       .onEnd((e) => {
-        'worklet';
+        "worklet";
         runOnJS(handleDoubleTap)(e.x, e.y);
       });
 
     const tap = Gesture.Tap()
       .maxDistance(16)
       .onEnd((e) => {
-        'worklet';
+        "worklet";
         runOnJS(handleTap)(e.x, e.y);
       });
 
     // Hold, then drag, to trade two photos between their frames. Pan activates
     // on movement and this one only after a hold, so they never both fire.
     const boxes = geometry?.hitBoxes ?? [];
+
     const swapDrag = Gesture.Pan()
       .activateAfterLongPress(350)
       .onStart((e) => {
-        'worklet';
+        "worklet";
         const id = pickAt(boxes, e.x, e.y);
+
         if (!id) return;
         sourceForSwap.value = id;
         swapTarget.value = id;
         runOnJS(beginSwap)(id);
       })
       .onUpdate((e) => {
-        'worklet';
+        "worklet";
+
         if (!sourceForSwap.value) return;
         const id = pickAt(boxes, e.x, e.y);
+
         if (id !== swapTarget.value) {
           swapTarget.value = id;
           runOnJS(hoverSwap)(id);
         }
       })
       .onFinalize(() => {
-        'worklet';
+        "worklet";
         const source = sourceForSwap.value;
         sourceForSwap.value = null;
+
         if (source) runOnJS(finishSwap)(source, swapTarget.value);
       });
 
     return Gesture.Simultaneous(
       Gesture.Exclusive(swapDrag, pan),
       pinch,
-      Gesture.Exclusive(doubleTap, tap)
+      Gesture.Exclusive(doubleTap, tap),
     );
   }, [
     activeGestures,
@@ -327,36 +370,44 @@ export function EditorScreen({
 
   const exportCollage = useCallback(async () => {
     setBusy(true);
+
     try {
       const result = await renderCollage(collage, photosById, images);
       await saveToGallery(result.uri).catch(() => {});
       const share = await shareToInstagramStory(result.uri);
-      if (share === 'no-instagram') {
+
+      if (share === "no-instagram") {
         Alert.alert(
-          'In der Galerie gespeichert',
-          'Instagram ließ sich nicht öffnen — die Collage liegt aber in deinen Fotos.'
+          "In der Galerie gespeichert",
+          "Instagram ließ sich nicht öffnen — die Collage liegt aber in deinen Fotos.",
         );
       }
     } catch (error) {
-      Alert.alert('Das hat nicht geklappt', String(error));
+      Alert.alert("Das hat nicht geklappt", String(error));
     } finally {
       setBusy(false);
     }
   }, [collage, images, photosById]);
 
   const setBackground = useCallback(
-    (color: string) => apply((c) => ({ ...c, background: { kind: 'color', color } })),
-    [apply]
+    (color: string) => apply((c) => ({ ...c, background: { kind: "color", color } })),
+    [apply],
   );
 
   const useBlurredBackground = useCallback(() => {
     apply((c) => {
       const current = c.background;
+
       const index =
-        current.kind === 'photo' ? (photos.findIndex((p) => p.id === current.photoId) + 1) % photos.length : 0;
+        current.kind === "photo"
+          ? (photos.findIndex((p) => p.id === current.photoId) + 1) % photos.length
+          : 0;
+
       const photo = photos[index];
+
       if (!photo) return c;
-      return { ...c, background: { kind: 'photo', photoId: photo.id, blur: 0.5, dim: 0.25 } };
+
+      return { ...c, background: { kind: "photo", photoId: photo.id, blur: 0.5, dim: 0.25 } };
     });
   }, [apply, photos]);
 
@@ -370,7 +421,12 @@ export function EditorScreen({
             active={showSafeZone}
             onPress={() => setShowSafeZone((v) => !v)}
           />
-          <Button label="Rückgängig" tone="quiet" onPress={undo} style={{ opacity: canUndo ? 1 : 0.35 }} />
+          <Button
+            label="Rückgängig"
+            tone="quiet"
+            onPress={undo}
+            style={{ opacity: canUndo ? 1 : 0.35 }}
+          />
         </View>
       </View>
 
@@ -390,6 +446,7 @@ export function EditorScreen({
                 size={preview}
                 live={live}
                 selectedId={selected?.id ?? null}
+                swap={swap ?? undefined}
                 showSafeZone={showSafeZone}
               />
             </Canvas>
@@ -400,9 +457,9 @@ export function EditorScreen({
       <Toolbar>
         {selectedLayer && selected ? (
           <Text style={styles.hint}>
-            {selected.mode === 'crop'
-              ? 'Ausschnitt: schieben und zoomen im Rahmen · nochmal tippen für den Rahmen'
-              : 'Rahmen: schieben und zoomen · nochmal tippen für den Ausschnitt'}
+            {selected.mode === "crop"
+              ? "Ausschnitt: schieben und zoomen im Rahmen · nochmal tippen für den Rahmen"
+              : "Rahmen: schieben und zoomen · nochmal tippen für den Ausschnitt"}
           </Text>
         ) : (
           <Text style={styles.hint}>
@@ -429,14 +486,14 @@ export function EditorScreen({
           <Pressable onPress={useBlurredBackground} style={[styles.swatch, styles.swatchPhoto]}>
             <Text style={styles.swatchPhotoLabel}>Foto</Text>
           </Pressable>
-          {[...palette, '#F3EDE3', '#12100E'].map((color) => (
+          {[...palette, "#F3EDE3", "#12100E"].map((color) => (
             <Pressable
               key={color}
               onPress={() => setBackground(color)}
               style={[
                 styles.swatch,
                 { backgroundColor: color },
-                collage.background.kind === 'color' && collage.background.color === color
+                collage.background.kind === "color" && collage.background.color === color
                   ? styles.swatchActive
                   : null,
               ]}
@@ -493,12 +550,23 @@ export function EditorScreen({
         ) : null}
 
         <View style={styles.actions}>
-          <Button label="Würfeln" onPress={() => { tick(); shuffle(); }} />
           <Button
-            label={showSliders ? 'Regler zu' : 'Regler'}
+            label="Würfeln"
+            onPress={() => {
+              tick();
+              shuffle();
+            }}
+          />
+          <Button
+            label={showSliders ? "Regler zu" : "Regler"}
             onPress={() => setShowSliders((v) => !v)}
           />
-          <Button label={busy ? 'Rendert …' : 'Zu Instagram'} tone="primary" onPress={exportCollage} style={{ flex: 1 }} />
+          <Button
+            label={busy ? "Rendert …" : "Zu Instagram"}
+            tone="primary"
+            onPress={exportCollage}
+            style={{ flex: 1 }}
+          />
         </View>
       </Toolbar>
     </View>
@@ -515,7 +583,7 @@ function commitFrame(
   gut: number,
   border: number,
   photosById: Record<string, Photo>,
-  images: Record<string, { width(): number; height(): number }>
+  images: Record<string, { width(): number; height(): number }>,
 ): Layer {
   const moved = {
     x: centre.x + (box.x - centre.x) * scale + tx,
@@ -523,11 +591,14 @@ function commitFrame(
     w: box.w * scale,
     h: box.h * scale,
   };
+
   const frame = rectToFrame(moved, content, gut, layer.frame.rotation);
   const image = images[layer.photoId];
+
   const aspect = image
     ? image.width() / image.height()
     : (photosById[layer.photoId]?.width ?? 1) / (photosById[layer.photoId]?.height ?? 1);
+
   // The crop lives inside the paper border, not inside the card.
   return { ...layer, frame, crop: clampCrop(layer.crop, insetRect(moved, border), aspect) };
 }
@@ -540,9 +611,10 @@ function commitCrop(
   { tx, ty, scale }: { tx: number; ty: number; scale: number },
   border: number,
   photosById: Record<string, Photo>,
-  images: Record<string, { width(): number; height(): number }>
+  images: Record<string, { width(): number; height(): number }>,
 ): Layer {
   const image = images[layer.photoId];
+
   const aspect = image
     ? image.width() / image.height()
     : (photosById[layer.photoId]?.width ?? 1) / (photosById[layer.photoId]?.height ?? 1);
@@ -554,15 +626,25 @@ function commitCrop(
 
   const zoomed = { ...layer.crop, scale: layer.crop.scale * scale, offsetX: 0, offsetY: 0 };
   const fitted = imageDestRect(aspect, inner, zoomed);
+
   const crop = {
     ...zoomed,
     offsetX: (movedX - fitted.x) / inner.w,
     offsetY: (movedY - fitted.y) / inner.h,
   };
+
   return { ...layer, crop: clampCrop(crop, inner, aspect) };
 }
 
-function IconToggle({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function IconToggle({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable onPress={onPress} style={[styles.toggle, active && styles.toggleActive]}>
       <Text style={[styles.toggleLabel, active && styles.toggleLabelActive]}>{label}</Text>
@@ -573,15 +655,15 @@ function IconToggle({ label, active, onPress }: { label: string; active: boolean
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.bg },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  topRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  stage: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
-  hint: { color: theme.textDim, fontSize: 12, textAlign: 'center', paddingBottom: 8 },
+  topRight: { flexDirection: "row", alignItems: "center", gap: 4 },
+  stage: { flex: 1, alignItems: "center", justifyContent: "center", padding: 8 },
+  hint: { color: theme.textDim, fontSize: 12, textAlign: "center", paddingBottom: 8 },
   row: { flexGrow: 0, paddingBottom: 10 },
   swatch: {
     width: 34,
@@ -592,9 +674,13 @@ const styles = StyleSheet.create({
     borderColor: theme.line,
   },
   swatchActive: { borderColor: theme.accent, borderWidth: 2 },
-  swatchPhoto: { alignItems: 'center', justifyContent: 'center', backgroundColor: theme.surfaceHigh },
-  swatchPhotoLabel: { color: theme.textDim, fontSize: 10, fontWeight: '700' },
-  actions: { flexDirection: 'row', gap: 10, paddingTop: 10, paddingBottom: 6 },
+  swatchPhoto: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.surfaceHigh,
+  },
+  swatchPhotoLabel: { color: theme.textDim, fontSize: 10, fontWeight: "700" },
+  actions: { flexDirection: "row", gap: 10, paddingTop: 10, paddingBottom: 6 },
   toggle: {
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -603,6 +689,6 @@ const styles = StyleSheet.create({
     borderColor: theme.line,
   },
   toggleActive: { backgroundColor: theme.surfaceHigh, borderColor: theme.surfaceHigh },
-  toggleLabel: { color: theme.textDim, fontSize: 13, fontWeight: '600' },
+  toggleLabel: { color: theme.textDim, fontSize: 13, fontWeight: "600" },
   toggleLabelActive: { color: theme.text },
 });

@@ -6,15 +6,16 @@
  * and hands back a plain lookup, so the scene stays a pure function of props
  * (and therefore renders identically offscreen at export time).
  */
-import { useEffect, useRef, useState } from 'react';
-import { Skia, type SkImage } from '@shopify/react-native-skia';
+import { useEffect, useRef, useState } from "react";
+import { Skia, type SkImage } from "@shopify/react-native-skia";
 
-import type { Photo } from '../model/collage';
+import type { Photo } from "../model/collage";
 
 export type ImageMap = Record<string, SkImage>;
 
 export async function loadSkImage(uri: string): Promise<SkImage | null> {
   const data = await Skia.Data.fromURI(uri);
+
   return Skia.Image.MakeImageFromEncoded(data);
 }
 
@@ -31,16 +32,19 @@ export function useSkImages(photos: Photo[]): ImageMap {
     for (const id of Object.keys(cache.current)) {
       if (!wanted.has(id)) delete cache.current[id];
     }
+
     if (missing.length === 0) {
       setImages({ ...cache.current });
+
       return;
     }
 
-    Promise.all(
+    void Promise.all(
       missing.map(async (photo) => {
         const image = await loadSkImage(photo.uri);
+
         if (image) cache.current[photo.id] = image;
-      })
+      }),
     ).then(() => {
       if (!cancelled) setImages({ ...cache.current });
     });

@@ -12,7 +12,7 @@
  * offer a layout with one dominant photo — and the search gets a small nudge
  * towards those when the crop cost is close.
  */
-import { DEFAULT_CROP, type Layer, type Rect } from './collage';
+import { DEFAULT_CROP, type Layer, type Rect } from "./collage";
 
 export type Recipe = {
   id: string;
@@ -33,10 +33,12 @@ const UNIT: Rect = { x: 0, y: 0, w: 1, h: 1 };
 function rows(rect: Rect, ...weights: number[]): Rect[] {
   const total = weights.reduce((a, b) => a + b, 0);
   let y = rect.y;
+
   return weights.map((weight) => {
     const h = (rect.h * weight) / total;
     const band = { x: rect.x, y, w: rect.w, h };
     y += h;
+
     return band;
   });
 }
@@ -45,87 +47,109 @@ function rows(rect: Rect, ...weights: number[]): Rect[] {
 function cols(rect: Rect, ...weights: number[]): Rect[] {
   const total = weights.reduce((a, b) => a + b, 0);
   let x = rect.x;
+
   return weights.map((weight) => {
     const w = (rect.w * weight) / total;
     const column = { x, y: rect.y, w, h: rect.h };
     x += w;
+
     return column;
   });
 }
 
 const grid = (columnCount: number, rowCount: number): Rect[] =>
   rows(UNIT, ...Array(rowCount).fill(1)).flatMap((band) =>
-    cols(band, ...Array(columnCount).fill(1))
+    cols(band, ...Array(columnCount).fill(1)),
   );
 
-/** Builds a recipe from a band split, e.g. `stacked([52, 48], [1, 2])`. */
-function stacked(weights: number[], perBand: number[]): Rect[] {
-  return rows(UNIT, ...weights).flatMap((band, i) =>
-    perBand[i] === 1 ? [band] : cols(band, ...Array(perBand[i]).fill(1))
-  );
+/**
+ * Builds a recipe from bands of `[weight, frames]`, e.g. `stacked([52, 1], [48, 2])`: a band of
+ * weight 52 with one frame over a band of 48 split into two.
+ */
+function stacked(...bands: [weight: number, frames: number][]): Rect[] {
+  return rows(UNIT, ...bands.map(([weight]) => weight)).flatMap((band, i) => {
+    const frames = nth(bands, i)[1];
+
+    return frames === 1 ? [band] : cols(band, ...Array(frames).fill(1));
+  });
+}
+
+/** A split into exactly two, as a pair. */
+function halves(split: Rect[]): [Rect, Rect] {
+  const [first, second] = split;
+
+  if (!first || !second) throw new Error("Expected a split into two");
+
+  return [first, second];
+}
+
+/** `items[i]` where the layout search guarantees it: an order is a permutation of the slots. */
+function nth<T>(items: readonly T[], i: number): T {
+  const item = items[i];
+
+  if (item === undefined) throw new Error(`No item at ${i}`);
+
+  return item;
 }
 
 export const RECIPES: Recipe[] = (() => {
   const two = rows(UNIT, 62, 38);
   const twoLow = rows(UNIT, 38, 62);
-  const leftHeavy = cols(UNIT, 62, 38);
-  const rightHeavy = cols(UNIT, 38, 62);
-  const leftHeavy4 = cols(UNIT, 58, 42);
-  const leftHeavy5 = cols(UNIT, 55, 45);
+  const leftHeavy = halves(cols(UNIT, 62, 38));
+  const rightHeavy = halves(cols(UNIT, 38, 62));
+  const leftHeavy4 = halves(cols(UNIT, 58, 42));
+  const leftHeavy5 = halves(cols(UNIT, 55, 45));
 
   return [
-    { id: '1/full', slots: [UNIT] },
+    { id: "1/full", slots: [UNIT] },
 
-    { id: '2/stack', slots: rows(UNIT, 1, 1) },
-    { id: '2/hero-top', slots: two },
-    { id: '2/hero-bottom', slots: twoLow },
-    { id: '2/side', slots: cols(UNIT, 1, 1) },
+    { id: "2/stack", slots: rows(UNIT, 1, 1) },
+    { id: "2/hero-top", slots: two },
+    { id: "2/hero-bottom", slots: twoLow },
+    { id: "2/side", slots: cols(UNIT, 1, 1) },
 
-    { id: '3/rows', slots: rows(UNIT, 1, 1, 1) },
-    { id: '3/band', slots: rows(UNIT, 30, 40, 30) },
-    { id: '3/hero-top', slots: stacked([52, 48], [1, 2]) },
-    { id: '3/hero-bottom', slots: stacked([48, 52], [2, 1]) },
+    { id: "3/rows", slots: rows(UNIT, 1, 1, 1) },
+    { id: "3/band", slots: rows(UNIT, 30, 40, 30) },
+    { id: "3/hero-top", slots: stacked([52, 1], [48, 2]) },
+    { id: "3/hero-bottom", slots: stacked([48, 2], [52, 1]) },
     {
-      id: '3/hero-left',
+      id: "3/hero-left",
       slots: [leftHeavy[0], ...rows(leftHeavy[1], 1, 1)],
     },
     {
-      id: '3/hero-right',
+      id: "3/hero-right",
       slots: [...rows(rightHeavy[0], 1, 1), rightHeavy[1]],
     },
 
-    { id: '4/quad', slots: grid(2, 2) },
-    { id: '4/rows', slots: rows(UNIT, 1, 1, 1, 1) },
-    { id: '4/hero-top', slots: stacked([46, 54], [1, 3]) },
-    { id: '4/hero-bottom', slots: stacked([54, 46], [3, 1]) },
-    { id: '4/sandwich', slots: stacked([38, 26, 36], [1, 2, 1]) },
+    { id: "4/quad", slots: grid(2, 2) },
+    { id: "4/rows", slots: rows(UNIT, 1, 1, 1, 1) },
+    { id: "4/hero-top", slots: stacked([46, 1], [54, 3]) },
+    { id: "4/hero-bottom", slots: stacked([54, 3], [46, 1]) },
+    { id: "4/sandwich", slots: stacked([38, 1], [26, 2], [36, 1]) },
     {
-      id: '4/hero-left',
+      id: "4/hero-left",
       slots: [leftHeavy4[0], ...rows(leftHeavy4[1], 1, 1, 1)],
     },
 
-    { id: '5/2-3', slots: stacked([48, 52], [2, 3]) },
-    { id: '5/3-2', slots: stacked([52, 48], [3, 2]) },
-    { id: '5/hero-top', slots: stacked([42, 29, 29], [1, 2, 2]) },
-    { id: '5/hero-bottom', slots: stacked([29, 29, 42], [2, 2, 1]) },
+    { id: "5/2-3", slots: stacked([48, 2], [52, 3]) },
+    { id: "5/3-2", slots: stacked([52, 3], [48, 2]) },
+    { id: "5/hero-top", slots: stacked([42, 1], [29, 2], [29, 2]) },
+    { id: "5/hero-bottom", slots: stacked([29, 2], [29, 2], [42, 1]) },
     {
-      id: '5/hero-left',
-      slots: [
-        leftHeavy5[0],
-        ...rows(leftHeavy5[1], 1, 1).flatMap((band) => cols(band, 1, 1)),
-      ],
+      id: "5/hero-left",
+      slots: [leftHeavy5[0], ...rows(leftHeavy5[1], 1, 1).flatMap((band) => cols(band, 1, 1))],
     },
 
-    { id: '6/2x3', slots: grid(2, 3) },
-    { id: '6/3x2', slots: grid(3, 2) },
-    { id: '6/1-2-3', slots: stacked([34, 33, 33], [1, 2, 3]) },
-    { id: '6/3-2-1', slots: stacked([33, 33, 34], [3, 2, 1]) },
-    { id: '6/hero-top', slots: stacked([40, 30, 30], [1, 2, 3]) },
+    { id: "6/2x3", slots: grid(2, 3) },
+    { id: "6/3x2", slots: grid(3, 2) },
+    { id: "6/1-2-3", slots: stacked([34, 1], [33, 2], [33, 3]) },
+    { id: "6/3-2-1", slots: stacked([33, 3], [33, 2], [34, 1]) },
+    { id: "6/hero-top", slots: stacked([40, 1], [30, 2], [30, 3]) },
 
     // Prints laid on top of one another. These need `overlapping` styling to
     // make any sense — see the flag's docs.
     {
-      id: '2/aufeinander',
+      id: "2/aufeinander",
       overlapping: true,
       slots: [
         { x: 0.02, y: 0.04, w: 0.72, h: 0.5 },
@@ -133,7 +157,7 @@ export const RECIPES: Recipe[] = (() => {
       ],
     },
     {
-      id: '3/faecher',
+      id: "3/faecher",
       overlapping: true,
       slots: [
         { x: 0.02, y: 0.03, w: 0.66, h: 0.36 },
@@ -142,7 +166,7 @@ export const RECIPES: Recipe[] = (() => {
       ],
     },
     {
-      id: '3/hero-aufgelegt',
+      id: "3/hero-aufgelegt",
       overlapping: true,
       slots: [
         { x: 0, y: 0, w: 1, h: 0.74 },
@@ -151,7 +175,7 @@ export const RECIPES: Recipe[] = (() => {
       ],
     },
     {
-      id: '4/stapel',
+      id: "4/stapel",
       overlapping: true,
       slots: [
         { x: 0.04, y: 0.02, w: 0.5, h: 0.34 },
@@ -184,6 +208,7 @@ export type Suggestion = {
  */
 function mismatch(photoAspect: number, slotAspect: number): number {
   const loss = Math.log(photoAspect / slotAspect);
+
   return loss * loss;
 }
 
@@ -194,8 +219,10 @@ function mismatch(photoAspect: number, slotAspect: number): number {
 function hierarchy(slots: Rect[]): number {
   if (slots.length < 2) return 0;
   const mean = 1 / slots.length;
+
   const variance =
     slots.reduce((sum, slot) => sum + (slot.w * slot.h - mean) ** 2, 0) / slots.length;
+
   return Math.sqrt(variance) / mean;
 }
 
@@ -208,16 +235,24 @@ const HIERARCHY_BONUS = 0.05;
 function permutations(n: number): number[][] {
   if (n <= 1) return [[0]];
   const out: number[][] = [];
+
   const walk = (prefix: number[], rest: number[]) => {
     if (rest.length === 0) {
       out.push(prefix);
+
       return;
     }
-    for (let i = 0; i < rest.length; i++) {
-      walk([...prefix, rest[i]], [...rest.slice(0, i), ...rest.slice(i + 1)]);
+
+    for (const [i, item] of rest.entries()) {
+      walk([...prefix, item], [...rest.slice(0, i), ...rest.slice(i + 1)]);
     }
   };
-  walk([], Array.from({ length: n }, (_, i) => i));
+
+  walk(
+    [],
+    Array.from({ length: n }, (_, i) => i),
+  );
+
   return out;
 }
 
@@ -225,6 +260,7 @@ function permutations(n: number): number[][] {
 function genericGrid(count: number): Recipe {
   const columnCount = Math.ceil(Math.sqrt(count));
   const rowCount = Math.ceil(count / columnCount);
+
   return { id: `${count}/auto`, slots: grid(columnCount, rowCount).slice(0, count) };
 }
 
@@ -239,39 +275,49 @@ export function suggestLayouts(
   photoAspects: number[],
   contentAspect: number,
   /** Whether photos currently have the paper edge that overlaps need to read. */
-  { overlapping = false }: { overlapping?: boolean } = {}
+  { overlapping = false }: { overlapping?: boolean } = {},
 ): Suggestion[] {
   const count = photoAspects.length;
+
   if (count === 0) return [];
 
   const candidates = RECIPES.filter(
-    (r) => r.slots.length === count && (overlapping || !r.overlapping)
+    (r) => r.slots.length === count && (overlapping || !r.overlapping),
   );
+
   const recipes = candidates.length > 0 ? candidates : [genericGrid(count)];
   // 6 photos is 720 permutations per recipe — cheap, and above that the search
   // stops paying for itself, so we keep the photos in the order they were tapped.
   const orders = count <= 6 ? permutations(count) : [Array.from({ length: count }, (_, i) => i)];
 
   const suggestions: Suggestion[] = [];
+
   for (const recipe of recipes) {
     const slotAspects = recipe.slots.map((s) => (s.w / s.h) * contentAspect);
     const bonus = HIERARCHY_BONUS * hierarchy(recipe.slots);
     let best: Suggestion | null = null;
+
     for (const order of orders) {
       let cropCost = 0;
-      for (let i = 0; i < count; i++) cropCost += mismatch(photoAspects[order[i]], slotAspects[i]);
+
+      for (let i = 0; i < count; i++)
+        cropCost += mismatch(nth(photoAspects, nth(order, i)), nth(slotAspects, i));
+
       if (!best || cropCost < best.cropCost) {
         best = { recipe, assignment: order, cropCost, score: cropCost - bonus };
       }
     }
+
     if (best) suggestions.push(best);
   }
+
   return suggestions.sort((a, b) => a.score - b.score);
 }
 
 export function layersFrom(suggestion: Suggestion, photoIds: string[]): Layer[] {
   return suggestion.recipe.slots.map((slot, i) => {
-    const photoId = photoIds[suggestion.assignment[i]];
+    const photoId = nth(photoIds, nth(suggestion.assignment, i));
+
     return {
       id: `${suggestion.recipe.id}:${i}:${photoId}`,
       photoId,

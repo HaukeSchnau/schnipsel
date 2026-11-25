@@ -16,13 +16,13 @@
  * (see IntentLauncherModule.kt), so there is no `setPackage` equivalent — but
  * Instagram is the only app that declares this action, so it resolves anyway.
  */
-import * as IntentLauncher from 'expo-intent-launcher';
-import { getContentUriAsync } from 'expo-file-system/legacy';
+import * as IntentLauncher from "expo-intent-launcher";
+import { getContentUriAsync } from "expo-file-system/legacy";
 
-const ADD_TO_STORY = 'com.instagram.share.ADD_TO_STORY';
+const ADD_TO_STORY = "com.instagram.share.ADD_TO_STORY";
 const FLAG_GRANT_READ_URI_PERMISSION = 0x00000001;
 
-export type StoryShareResult = 'opened' | 'no-instagram';
+export type StoryShareResult = "opened" | "no-instagram";
 
 /**
  * Opens Instagram's story composer with `fileUri` as the full-bleed background.
@@ -36,20 +36,25 @@ export type StoryShareResult = 'opened' | 'no-instagram';
  */
 export async function shareToInstagramStory(
   fileUri: string,
-  sourceApplication?: string
+  sourceApplication?: string,
 ): Promise<StoryShareResult> {
   const contentUri = await getContentUriAsync(fileUri);
+
   try {
-    await IntentLauncher.startActivityAsync(ADD_TO_STORY, {
+    const params: IntentLauncher.IntentLauncherParams = {
       data: contentUri,
-      type: 'image/jpeg',
+      type: "image/jpeg",
       flags: FLAG_GRANT_READ_URI_PERMISSION,
-      ...(sourceApplication ? { extra: { source_application: sourceApplication } } : {}),
-    });
-    return 'opened';
+    };
+
+    if (sourceApplication) params.extra = { source_application: sourceApplication };
+
+    await IntentLauncher.startActivityAsync(ADD_TO_STORY, params);
+
+    return "opened";
   } catch {
     // ActivityNotFoundException: Instagram isn't installed, or is too old to
     // declare the action. The collage is already in the gallery either way.
-    return 'no-instagram';
+    return "no-instagram";
   }
 }

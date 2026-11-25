@@ -7,7 +7,7 @@
  *
  *   bun scripts/layout-sheet.ts <output-dir>
  */
-import { emptyCollage, type Collage, type Layer, type Size } from '../src/model/collage';
+import { emptyCollage, type Collage, type Layer, type Size } from "../src/model/collage";
 import {
   borderWidth,
   contentRect,
@@ -17,23 +17,28 @@ import {
   layerAngle,
   layerRect,
   shadowSpec,
-} from '../src/model/geometry';
-import { RECIPES, layersFrom, suggestLayouts } from '../src/model/layout';
-import { applyStyle, STYLES, STYLE_ORDER, type StyleName } from '../src/model/styles';
+} from "../src/model/geometry";
+import { RECIPES, layersFrom, suggestLayouts } from "../src/model/layout";
+import { applyStyle, STYLES, STYLE_ORDER, type StyleName } from "../src/model/styles";
 
 const STORY: Size = { width: 1080, height: 1920 };
 const SCALE = 0.15;
 
-const INK = ['#c2643f', '#7d8c5c', '#4a6b7c', '#b08442', '#8a6a86', '#6b7f6b'];
-const PAPER = '#FBF8F2';
+const INK = ["#c2643f", "#7d8c5c", "#4a6b7c", "#b08442", "#8a6a86", "#6b7f6b"];
+const PAPER = "#FBF8F2";
+
+const ink = (i: number) => INK[i % INK.length] ?? PAPER;
 
 function layersFromRecipe(recipeId: string): Layer[] {
-  const recipe = RECIPES.find((r) => r.id === recipeId)!;
+  const recipe = RECIPES.find((r) => r.id === recipeId);
+
+  if (!recipe) throw new Error(`No recipe ${recipeId}`);
+
   return recipe.slots.map((slot, i) => ({
     id: `${recipeId}:${i}`,
     photoId: `p${i}`,
     frame: { ...slot, rotation: 0 },
-    crop: { fit: 'cover' as const, scale: 1, offsetX: 0, offsetY: 0 },
+    crop: { fit: "cover" as const, scale: 1, offsetX: 0, offsetY: 0 },
   }));
 }
 
@@ -44,7 +49,7 @@ function svg(collage: Collage, labels?: string[]): string {
   const gut = gutter(collage, STORY);
   const bd = borderWidth(collage, STORY);
   const sh = shadowSpec(collage, STORY);
-  const bg = collage.background.kind === 'color' ? collage.background.color : '#333';
+  const bg = collage.background.kind === "color" ? collage.background.color : "#333";
   const shadowId = `sh${Math.round(sh.blur * 100)}-${Math.round(sh.opacity * 100)}`;
 
   const defs =
@@ -53,7 +58,7 @@ function svg(collage: Collage, labels?: string[]): string {
            <feDropShadow dx="0" dy="${(sh.dy * SCALE).toFixed(2)}"
              stdDeviation="${((sh.blur * SCALE) / 2).toFixed(2)}"
              flood-opacity="${sh.opacity.toFixed(3)}" /></filter></defs>`
-      : '';
+      : "";
 
   const cells = collage.layers
     .map((layer, i) => {
@@ -63,20 +68,23 @@ function svg(collage: Collage, labels?: string[]): string {
       const angle = layerAngle(layer, collage.scatter);
       const cx = (card.x + card.w / 2) * SCALE;
       const cy = (card.y + card.h / 2) * SCALE;
-      const filter = sh.opacity > 0 ? ` filter="url(#${shadowId})"` : '';
-      const box = (r: typeof card, fill: string, rx: number, extra = '') =>
+      const filter = sh.opacity > 0 ? ` filter="url(#${shadowId})"` : "";
+
+      const box = (r: typeof card, fill: string, rx: number, extra = "") =>
         `<rect x="${(r.x * SCALE).toFixed(1)}" y="${(r.y * SCALE).toFixed(1)}"
                width="${(r.w * SCALE).toFixed(1)}" height="${(r.h * SCALE).toFixed(1)}"
                rx="${(rx * SCALE).toFixed(1)}" fill="${fill}"${extra} />`;
+
       const label = labels?.[i] ?? String(i + 1);
+
       return `<g transform="rotate(${angle.toFixed(2)} ${cx.toFixed(1)} ${cy.toFixed(1)})">
-        ${bd > 0 ? box(card, PAPER, radius, filter) : sh.opacity > 0 ? box(card, INK[i % INK.length], radius, filter) : ''}
-        ${box(inner, INK[i % INK.length], Math.max(0, radius - bd))}
+        ${bd > 0 ? box(card, PAPER, radius, filter) : sh.opacity > 0 ? box(card, ink(i), radius, filter) : ""}
+        ${box(inner, ink(i), Math.max(0, radius - bd))}
         <text x="${cx.toFixed(1)}" y="${(cy + 4).toFixed(1)}" text-anchor="middle"
               font-family="system-ui" font-size="11" fill="#fff" opacity="0.85">${label}</text>
       </g>`;
     })
-    .join('\n');
+    .join("\n");
 
   return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
     ${defs}<rect width="${w}" height="${h}" fill="${bg}" />
@@ -91,50 +99,75 @@ function tile(title: string, subtitle: string, body: string): string {
 
 /** Photo mixes that actually turn up: all portrait, a landscape thrown in, etc. */
 const MIXES: { label: string; aspects: number[] }[] = [
-  { label: '2 Hochformate', aspects: [3 / 4, 3 / 4] },
-  { label: '1 quer, 1 hoch', aspects: [16 / 9, 3 / 4] },
-  { label: '3 Hochformate', aspects: [3 / 4, 3 / 4, 3 / 4] },
-  { label: '2 hoch, 1 quer', aspects: [3 / 4, 16 / 9, 3 / 4] },
-  { label: '3 quer', aspects: [3 / 2, 3 / 2, 3 / 2] },
-  { label: '4 gemischt', aspects: [3 / 4, 16 / 9, 1, 3 / 4] },
-  { label: '4 Hochformate', aspects: [3 / 4, 3 / 4, 3 / 4, 3 / 4] },
-  { label: '5 gemischt', aspects: [3 / 4, 3 / 2, 3 / 4, 1, 16 / 9] },
-  { label: '6 gemischt', aspects: [3 / 4, 3 / 2, 1, 3 / 4, 16 / 9, 1] },
+  { label: "2 Hochformate", aspects: [3 / 4, 3 / 4] },
+  { label: "1 quer, 1 hoch", aspects: [16 / 9, 3 / 4] },
+  { label: "3 Hochformate", aspects: [3 / 4, 3 / 4, 3 / 4] },
+  { label: "2 hoch, 1 quer", aspects: [3 / 4, 16 / 9, 3 / 4] },
+  { label: "3 quer", aspects: [3 / 2, 3 / 2, 3 / 2] },
+  { label: "4 gemischt", aspects: [3 / 4, 16 / 9, 1, 3 / 4] },
+  { label: "4 Hochformate", aspects: [3 / 4, 3 / 4, 3 / 4, 3 / 4] },
+  { label: "5 gemischt", aspects: [3 / 4, 3 / 2, 3 / 4, 1, 16 / 9] },
+  { label: "6 gemischt", aspects: [3 / 4, 3 / 2, 1, 3 / 4, 16 / 9, 1] },
 ];
 
 function collageForMix(aspects: number[], style: StyleName): Collage {
-  const base = applyStyle(emptyCollage('sheet'), style);
+  const base = applyStyle(emptyCollage("sheet"), style);
   const content = contentRect(base, STORY);
+
   const best = suggestLayouts(aspects, content.w / content.h, {
     overlapping: base.border > 0,
   })[0];
-  return { ...base, layers: layersFrom(best, aspects.map((_, i) => `p${i}`)) };
+
+  if (!best) throw new Error(`No layout for ${aspects.length} photos`);
+
+  return {
+    ...base,
+    layers: layersFrom(
+      best,
+      aspects.map((_, i) => `p${i}`),
+    ),
+  };
 }
 
-const out = process.argv[2] ?? './layout-sheet';
+const out = process.argv[2] ?? "./layout-sheet";
 
 const styleSections = STYLE_ORDER.map((name) => {
   const mix = [3 / 4, 16 / 9, 1, 3 / 4];
   const collage = collageForMix(mix, name);
+
   return tile(STYLES[name].label, STYLES[name].hint, svg(collage));
-}).join('\n');
+}).join("\n");
 
 const mixSections = MIXES.map(({ label, aspects }) => {
-  const collage = collageForMix(aspects, 'kante');
+  const collage = collageForMix(aspects, "kante");
   const content = contentRect(collage, STORY);
   const best = suggestLayouts(aspects, content.w / content.h)[0];
+
+  if (!best) throw new Error(`No layout for ${label}`);
+
   const labels = best.assignment.map((photoIndex) => {
-    const a = aspects[photoIndex];
-    return a > 1.2 ? 'quer' : a < 0.85 ? 'hoch' : '1:1';
+    const a = aspects[photoIndex] ?? 1;
+
+    return a > 1.2 ? "quer" : a < 0.85 ? "hoch" : "1:1";
   });
+
   return tile(label, best.recipe.id, svg(collage, labels));
-}).join('\n');
+}).join("\n");
 
 const recipeSections = RECIPES.map((recipe) => {
-  const style: StyleName = recipe.overlapping ? 'schuhkarton' : 'kante';
-  const collage = { ...applyStyle(emptyCollage('sheet'), style), layers: layersFromRecipe(recipe.id) };
-  return tile(recipe.id, recipe.overlapping ? 'überlappend' : `${recipe.slots.length} Bilder`, svg(collage));
-}).join('\n');
+  const style: StyleName = recipe.overlapping ? "schuhkarton" : "kante";
+
+  const collage = {
+    ...applyStyle(emptyCollage("sheet"), style),
+    layers: layersFromRecipe(recipe.id),
+  };
+
+  return tile(
+    recipe.id,
+    recipe.overlapping ? "überlappend" : `${recipe.slots.length} Bilder`,
+    svg(collage),
+  );
+}).join("\n");
 
 const html = `<!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8" />
@@ -174,5 +207,7 @@ const html = `<!DOCTYPE html>
 </body></html>`;
 
 await Bun.write(`${out}/index.html`, html);
+
 console.log(`geschrieben: ${out}/index.html`);
+
 console.log(`Rezepte: ${RECIPES.length}, Mixe: ${MIXES.length}, Stile: ${STYLE_ORDER.length}`);

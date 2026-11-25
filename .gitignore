@@ -42,3 +42,7 @@ yarn-error.*
 
 # Working notes stay local.
 /notes/
+
+# devenv
+.devenv/
+.devenv*

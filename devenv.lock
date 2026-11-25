@@ -1,0 +1,64 @@
+{
+  "nodes": {
+    "devenv": {
+      "locked": {
+        "dir": "src/modules",
+        "lastModified": 1789149961,
+        "narHash": "sha256-zZB/UVcdL0VWuAPEe/ALY7onj8Q18efSUdL3ZJlUspk=",
+        "owner": "cachix",
+        "repo": "devenv",
+        "rev": "2418e1b43797c44de5166176622c8d8fa0149871",
+        "type": "github"
+      },
+      "original": {
+        "dir": "src/modules",
+        "owner": "cachix",
+        "repo": "devenv",
+        "rev": "2418e1b43797c44de5166176622c8d8fa0149871",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1795234589,
+        "narHash": "sha256-f/VVvxf5RsQgWVhUtefoca5ktVg0DA2bnkMOcmSnozo=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "2786a2a72088ecf32aea5b3ec52099e6a7cff78f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "2786a2a72088ecf32aea5b3ec52099e6a7cff78f",
+        "type": "github"
+      }
+    },
+    "projectSdk": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1795551525,
+        "narHash": "sha256-YMm/h7r4Uo1u+Is0l/t0n11iXs03GNKAt0cVHO8jk10=",
+        "owner": "HaukeSchnau",
+        "repo": "nix-infra-modules",
+        "rev": "b365d13637b9dc83c397df542b5112a50ac8cbb9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "HaukeSchnau",
+        "repo": "nix-infra-modules",
+        "rev": "b365d13637b9dc83c397df542b5112a50ac8cbb9",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "devenv": "devenv",
+        "nixpkgs": "nixpkgs",
+        "projectSdk": "projectSdk"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

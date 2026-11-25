@@ -19,7 +19,7 @@ import {
   type Layer,
   type Rect,
   type Size,
-} from './collage';
+} from "./collage";
 
 /** Gutter width in canvas pixels, driven by the gap slider. */
 export function gutter(collage: Collage, canvas: Size): number {
@@ -44,6 +44,7 @@ export function contentRect(collage: Collage, canvas: Size): Rect {
   const bottom = collage.respectSafeZone ? canvas.height * SAFE_ZONE.bottom : 0;
   const m = margin(collage, canvas);
   const half = gutter(collage, canvas) / 2;
+
   return {
     x: m - half,
     y: top + m - half,
@@ -55,6 +56,7 @@ export function contentRect(collage: Collage, canvas: Size): Rect {
 /** A layer's box in canvas pixels, gutter applied. */
 export function layerRect(frame: Frame, content: Rect, gut: number): Rect {
   const half = gut / 2;
+
   return {
     x: content.x + frame.x * content.w + half,
     y: content.y + frame.y * content.h + half,
@@ -66,6 +68,7 @@ export function layerRect(frame: Frame, content: Rect, gut: number): Rect {
 /** Inverse of `layerRect`, for turning a dragged pixel box back into a frame. */
 export function rectToFrame(rect: Rect, content: Rect, gut: number, rotation: number): Frame {
   const half = gut / 2;
+
   return {
     x: (rect.x - half - content.x) / content.w,
     y: (rect.y - half - content.y) / content.h,
@@ -81,10 +84,12 @@ export function rectToFrame(rect: Rect, content: Rect, gut: number, rotation: nu
  */
 function jitter(id: string): number {
   let h = 0x811c9dc5;
+
   for (let i = 0; i < id.length; i++) {
     h ^= id.charCodeAt(i);
     h = Math.imul(h, 0x01000193);
   }
+
   return ((h >>> 0) / 0xffffffff) * 2 - 1;
 }
 
@@ -107,9 +112,10 @@ export function borderWidth(collage: Collage, canvas: Size): number {
  */
 export function shadowSpec(collage: Collage, canvas: Size) {
   const short = Math.min(canvas.width, canvas.height);
+
   return {
     blur: collage.shadow * 0.026 * short,
-    dy: collage.shadow * 0.010 * short,
+    dy: collage.shadow * 0.01 * short,
     opacity: collage.shadow * 0.38,
   };
 }
@@ -118,6 +124,7 @@ export function shadowSpec(collage: Collage, canvas: Size) {
 export function insetRect(rect: Rect, by: number): Rect {
   const dx = Math.min(by, rect.w / 2 - 0.5);
   const dy = Math.min(by, rect.h / 2 - 0.5);
+
   return { x: rect.x + dx, y: rect.y + dy, w: rect.w - dx * 2, h: rect.h - dy * 2 };
 }
 
@@ -127,9 +134,10 @@ export function insetRect(rect: Rect, by: number): Rect {
  */
 export function imageDestRect(imageAspect: number, rect: Rect, crop: Crop): Rect {
   const rectAspect = rect.w / rect.h;
-  const matchHeight = crop.fit === 'cover' ? imageAspect > rectAspect : imageAspect <= rectAspect;
+  const matchHeight = crop.fit === "cover" ? imageAspect > rectAspect : imageAspect <= rectAspect;
   let w: number;
   let h: number;
+
   if (matchHeight) {
     h = rect.h;
     w = h * imageAspect;
@@ -137,8 +145,10 @@ export function imageDestRect(imageAspect: number, rect: Rect, crop: Crop): Rect
     w = rect.w;
     h = w / imageAspect;
   }
+
   w *= crop.scale;
   h *= crop.scale;
+
   return {
     x: rect.x + (rect.w - w) / 2 + crop.offsetX * rect.w,
     y: rect.y + (rect.h - h) / 2 + crop.offsetY * rect.h,
@@ -149,11 +159,13 @@ export function imageDestRect(imageAspect: number, rect: Rect, crop: Crop): Rect
 
 /** Keeps a `cover` crop from exposing the frame's background when panned. */
 export function clampCrop(crop: Crop, rect: Rect, imageAspect: number): Crop {
-  const scale = Math.max(crop.fit === 'cover' ? 1 : 0.2, Math.min(6, crop.scale));
+  const scale = Math.max(crop.fit === "cover" ? 1 : 0.2, Math.min(6, crop.scale));
   const dest = imageDestRect(imageAspect, rect, { ...crop, scale });
-  if (crop.fit === 'contain') return { ...crop, scale };
+
+  if (crop.fit === "contain") return { ...crop, scale };
   const slackX = Math.max(0, (dest.w - rect.w) / 2 / rect.w);
   const slackY = Math.max(0, (dest.h - rect.h) / 2 / rect.h);
+
   return {
     ...crop,
     scale,
@@ -179,9 +191,11 @@ export type HitBox = {
 export function layerHitBoxes(collage: Collage, canvas: Size): HitBox[] {
   const content = contentRect(collage, canvas);
   const gut = gutter(collage, canvas);
+
   return collage.layers.map((layer) => {
     const box = layerRect(layer.frame, content, gut);
     const angle = (layerAngle(layer, collage.scatter) * Math.PI) / 180;
+
     return {
       id: layer.id,
       cx: box.x + box.w / 2,
@@ -196,21 +210,27 @@ export function layerHitBoxes(collage: Collage, canvas: Size): HitBox[] {
 
 /** Id of the topmost box under a point, or null. Safe to call on the UI thread. */
 export function pickAt(boxes: HitBox[], px: number, py: number): string | null {
-  'worklet';
+  "worklet";
+
   for (let i = boxes.length - 1; i >= 0; i--) {
     const b = boxes[i];
+
+    if (!b) continue;
     const dx = px - b.cx;
     const dy = py - b.cy;
     const lx = dx * b.cos + dy * b.sin;
     const ly = -dx * b.sin + dy * b.cos;
+
     if (Math.abs(lx) <= b.hw && Math.abs(ly) <= b.hh) return b.id;
   }
+
   return null;
 }
 
 /** Topmost layer under a point, or null. */
 export function hitTest(collage: Collage, canvas: Size, px: number, py: number): Layer | null {
   const id = pickAt(layerHitBoxes(collage, canvas), px, py);
+
   return collage.layers.find((l) => l.id === id) ?? null;
 }
 
@@ -222,5 +242,6 @@ export function canvasSize(collage: Collage): Size {
 export function fitCanvas(collage: Collage, available: Size): Size {
   const target = canvasSize(collage);
   const scale = Math.min(available.width / target.width, available.height / target.height);
+
   return { width: target.width * scale, height: target.height * scale };
 }

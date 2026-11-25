@@ -1,0 +1,8 @@
+inputs:
+  projectSdk:
+    url: github:HaukeSchnau/nix-infra-modules/b365d13637b9dc83c397df542b5112a50ac8cbb9
+    flake: false
+  nixpkgs:
+    url: github:NixOS/nixpkgs/2786a2a72088ecf32aea5b3ec52099e6a7cff78f
+  devenv:
+    url: github:cachix/devenv/2418e1b43797c44de5166176622c8d8fa0149871?dir=src/modules

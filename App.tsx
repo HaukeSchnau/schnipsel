@@ -4,42 +4,43 @@
  * Two screens and no navigation library: pick photos, then edit. The draft is
  * restored on launch, so "where was I" is answered before it's asked.
  */
-import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
-import { useEditor } from './src/editor/useEditor';
-import { EditorScreen } from './src/screens/EditorScreen';
-import { PickerScreen } from './src/screens/PickerScreen';
-import { theme } from './src/ui/theme';
+import { useEditor } from "./src/editor/useEditor";
+import { EditorScreen } from "./src/screens/EditorScreen";
+import { PickerScreen } from "./src/screens/PickerScreen";
+import { theme } from "./src/ui/theme";
 
 export default function App() {
   const editor = useEditor();
   const [picking, setPicking] = useState(false);
-  const hasCollage = !!editor.collage && editor.collage.layers.length > 0;
+  // A collage worth editing: one with at least one photo on it.
+  const collage = editor.collage && editor.collage.layers.length > 0 ? editor.collage : null;
 
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+        <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
           <StatusBar style="light" />
           {!editor.restored ? (
             <View style={styles.splash}>
               <ActivityIndicator color={theme.accent} />
             </View>
-          ) : picking || !hasCollage ? (
+          ) : picking || !collage ? (
             <PickerScreen
               onDone={(photos) => {
                 editor.startWith(photos);
                 setPicking(false);
               }}
-              onCancel={hasCollage ? () => setPicking(false) : undefined}
+              onCancel={collage ? () => setPicking(false) : undefined}
             />
           ) : (
             <EditorScreen
-              collage={editor.collage!}
+              collage={collage}
               photos={editor.photos}
               photosById={editor.photosById}
               canUndo={editor.canUndo}
@@ -57,5 +58,5 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.bg },
-  splash: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  splash: { flex: 1, alignItems: "center", justifyContent: "center" },
 });

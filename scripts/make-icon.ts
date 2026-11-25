@@ -21,12 +21,13 @@
  *     --width 900 out/splash.svg assets/splash-icon.png
  */
 const SIZE = 1024;
+
 /** Radius every launcher mask is guaranteed to keep. */
 const SAFE = (SIZE * (72 / 108)) / 2;
 
-const BG = '#17130F';
-const PAPER = '#FBF8F2';
-const PHOTO = ['#C2643F', '#7D8C5C', '#4A6B7C'];
+const BG = "#17130F";
+const PAPER = "#FBF8F2";
+const PHOTO = ["#C2643F", "#7D8C5C", "#4A6B7C"];
 
 type Print = { cx: number; cy: number; w: number; h: number; angle: number };
 
@@ -55,7 +56,7 @@ function reach({ cx, cy, w, h }: Print): number {
   return Math.hypot(cx - SIZE / 2, cy - SIZE / 2) + Math.hypot(w / 2, h / 2);
 }
 
-function rect(p: Print, inset: number, fill: string, filter = ''): string {
+function rect(p: Print, inset: number, fill: string, filter = ""): string {
   return `<rect x="${(p.cx - p.w / 2 - inset).toFixed(1)}" y="${(p.cy - p.h / 2 - inset).toFixed(1)}"
       width="${(p.w + inset * 2).toFixed(1)}" height="${(p.h + inset * 2).toFixed(1)}"
       fill="${fill}"${filter} transform="rotate(${p.angle} ${p.cx.toFixed(1)} ${p.cy.toFixed(1)})" />`;
@@ -67,9 +68,13 @@ function colourScene(prints: Print[], border: number): string {
     .map(
       (p, i) =>
         rect(p, 0, PAPER, ' filter="url(#drop)"') +
-        rect({ ...p, w: p.w - border * 2, h: p.h - border * 2 }, 0, PHOTO[i % PHOTO.length])
+        rect(
+          { ...p, w: p.w - border * 2, h: p.h - border * 2 },
+          0,
+          PHOTO[i % PHOTO.length] ?? PAPER,
+        ),
     )
-    .join('\n');
+    .join("\n");
 }
 
 /**
@@ -79,8 +84,9 @@ function colourScene(prints: Print[], border: number): string {
  */
 function monoScene(prints: Print[], gap: number): string {
   const layers = prints
-    .map((p) => `${rect(p, gap, '#000000')}\n${rect(p, 0, '#FFFFFF')}`)
-    .join('\n');
+    .map((p) => `${rect(p, gap, "#000000")}\n${rect(p, 0, "#FFFFFF")}`)
+    .join("\n");
+
   return `<mask id="prints" maskUnits="userSpaceOnUse" x="0" y="0" width="${SIZE}" height="${SIZE}">
       <rect width="${SIZE}" height="${SIZE}" fill="black" />
       ${layers}
@@ -92,14 +98,14 @@ const DROP = `<defs><filter id="drop" x="-30%" y="-30%" width="160%" height="160
     <feDropShadow dx="0" dy="10" stdDeviation="14" flood-opacity="0.35" />
   </filter></defs>`;
 
-const svg = (body: string, background: string | null, defs = '') =>
+const svg = (body: string, background: string | null, defs = "") =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
-${defs}${background ? `<rect width="${SIZE}" height="${SIZE}" fill="${background}" />` : ''}
+${defs}${background ? `<rect width="${SIZE}" height="${SIZE}" fill="${background}" />` : ""}
 ${body}
 </svg>`;
 
 /** The dedication on the launch screen. The whole point of a gift app. */
-const DEDICATION = 'für Janelle';
+const DEDICATION = "für Janelle";
 
 /**
  * The splash is the icon motif with a line under it. expo-splash-screen centres
@@ -113,6 +119,7 @@ function splash(): string {
   const pad = 40;
   const textY = bottom + 130;
   const height = textY + pad + 30;
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${height.toFixed(0)}" viewBox="0 ${(top - pad).toFixed(0)} ${SIZE} ${height.toFixed(0)}">
 ${DROP}
 ${colourScene(prints, 30)}
@@ -121,18 +128,23 @@ ${colourScene(prints, 30)}
 </svg>`;
 }
 
-const out = process.argv[2] ?? './icon';
+const out = process.argv[2] ?? "./icon";
 
 const worst = Math.max(...ADAPTIVE.map(reach));
+
 if (worst > SAFE) {
   console.error(`FEHLER: Motiv ragt ${(worst - SAFE).toFixed(0)}px aus der sicheren Zone`);
   process.exit(1);
 }
 
 await Bun.write(`${out}/icon.svg`, svg(colourScene(SQUARE, 30), BG, DROP));
+
 await Bun.write(`${out}/adaptive-foreground.svg`, svg(colourScene(ADAPTIVE, 26), null, DROP));
+
 await Bun.write(`${out}/adaptive-monochrome.svg`, svg(monoScene(ADAPTIVE, 12), null));
+
 await Bun.write(`${out}/splash.svg`, splash());
 
 console.log(`geschrieben nach ${out}`);
+
 console.log(`sichere Zone Radius ${SAFE.toFixed(0)}px, Motiv reicht bis ${worst.toFixed(0)}px`);

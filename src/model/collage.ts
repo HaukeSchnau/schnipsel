@@ -12,6 +12,7 @@
  */
 
 export type Rect = { x: number; y: number; w: number; h: number };
+
 export type Size = { width: number; height: number };
 
 /** A layer's box, relative to the content area. `rotation` is in degrees. */
@@ -20,7 +21,7 @@ export type Frame = Rect & { rotation: number };
 /** How the photo sits inside its frame. */
 export type Crop = {
   /** `cover` fills the frame, `contain` letterboxes it. Double tap toggles. */
-  fit: 'cover' | 'contain';
+  fit: "cover" | "contain";
   /** Zoom on top of the fitted size. 1 = exactly fitted. */
   scale: number;
   /** Pan away from centred, in frame widths / heights. */
@@ -37,11 +38,11 @@ export type Layer = {
 };
 
 export type Background =
-  | { kind: 'color'; color: string }
+  | { kind: "color"; color: string }
   /** The classic: one of the photos, blown up and blurred behind the collage. */
-  | { kind: 'photo'; photoId: string; blur: number; dim: number };
+  | { kind: "photo"; photoId: string; blur: number; dim: number };
 
-export type CanvasPreset = 'story' | 'post';
+export type CanvasPreset = "story" | "post";
 
 export type Collage = {
   id: string;
@@ -101,16 +102,19 @@ export const SAFE_ZONE = { top: 250 / 1920, bottom: 310 / 1920 };
 
 /** Largest gutter the gap slider can produce, as a fraction of the short edge. */
 export const MAX_GAP = 0.05;
+
 /** Largest outer border the margin slider can produce, same units. */
 export const MAX_MARGIN = 0.12;
+
 /** Largest scatter angle in degrees at `scatter === 1`. */
 export const MAX_SCATTER_DEG = 7;
+
 /** Widest paper border, as a fraction of the short edge. */
 export const MAX_BORDER = 0.035;
 
-export const DEFAULT_CROP: Crop = { fit: 'cover', scale: 1, offsetX: 0, offsetY: 0 };
+export const DEFAULT_CROP: Crop = { fit: "cover", scale: 1, offsetX: 0, offsetY: 0 };
 
-export function aspectOf(photo: Pick<Photo, 'width' | 'height'>) {
+export function aspectOf(photo: Pick<Photo, "width" | "height">) {
   return photo.width / photo.height;
 }
 
@@ -128,7 +132,7 @@ export function emptyCollage(id: string): Collage {
   return {
     id,
     layers: [],
-    background: { kind: 'color', color: '#F3EDE3' },
+    background: { kind: "color", color: "#F3EDE3" },
     gap: 0.08,
     margin: 0,
     radius: 0,
@@ -136,7 +140,7 @@ export function emptyCollage(id: string): Collage {
     shadow: 0,
     scatter: 0,
     respectSafeZone: false,
-    canvas: 'story',
+    canvas: "story",
     updatedAt: Date.now(),
   };
 }
@@ -152,7 +156,9 @@ export function swapPhotos(collage: Collage, aId: string, bId: string): Collage 
   if (aId === bId) return collage;
   const a = collage.layers.find((l) => l.id === aId);
   const b = collage.layers.find((l) => l.id === bId);
+
   if (!a || !b) return collage;
+
   return {
     ...collage,
     layers: collage.layers.map((layer) =>
@@ -160,7 +166,7 @@ export function swapPhotos(collage: Collage, aId: string, bId: string): Collage 
         ? { ...layer, photoId: b.photoId, crop: b.crop }
         : layer.id === bId
           ? { ...layer, photoId: a.photoId, crop: a.crop }
-          : layer
+          : layer,
     ),
   };
 }

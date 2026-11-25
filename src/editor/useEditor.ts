@@ -5,13 +5,13 @@
  * versions — cheap, because a collage is a few hundred bytes of numbers, not
  * pixels. That same property is what makes the archive/remix idea free later.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { emptyCollage, type Collage, type Photo } from '../model/collage';
-import { canvasSize, contentRect } from '../model/geometry';
-import { layersFrom, suggestLayouts, type Suggestion } from '../model/layout';
-import { pruneUnused } from '../photos/import';
-import { loadDraft, saveDraft } from '../storage/draft';
+import { emptyCollage, type Collage, type Photo } from "../model/collage";
+import { canvasSize, contentRect } from "../model/geometry";
+import { layersFrom, suggestLayouts, type Suggestion } from "../model/layout";
+import { pruneUnused } from "../photos/import";
+import { loadDraft, saveDraft } from "../storage/draft";
 
 const UNDO_LIMIT = 50;
 
@@ -33,11 +33,13 @@ export function useEditor() {
 
   useEffect(() => {
     const draft = loadDraft();
+
     if (draft) {
       collageRef.current = draft.collage;
       setCollage(draft.collage);
       setPhotos(draft.photos);
     }
+
     setRestored(true);
   }, []);
 
@@ -45,10 +47,7 @@ export function useEditor() {
     if (collage && restored) saveDraft(collage, photos);
   }, [collage, photos, restored]);
 
-  const photosById = useMemo(
-    () => Object.fromEntries(photos.map((p) => [p.id, p])),
-    [photos]
-  );
+  const photosById = useMemo(() => Object.fromEntries(photos.map((p) => [p.id, p])), [photos]);
 
   /**
    * `history: false` is for continuous changes — a slider being dragged, a
@@ -58,22 +57,27 @@ export function useEditor() {
   const apply = useCallback(
     (mutate: (current: Collage) => Collage, { history = true }: { history?: boolean } = {}) => {
       const current = collageRef.current;
+
       if (!current) return;
       const next = mutate(current);
+
       if (next === current) return;
+
       if (history) {
         undoStack.current = [...undoStack.current.slice(-(UNDO_LIMIT - 1)), current];
         setCanUndo(true);
       }
+
       collageRef.current = { ...next, updatedAt: Date.now() };
       setCollage(collageRef.current);
     },
-    []
+    [],
   );
 
   const undo = useCallback(() => {
     const previous = undoStack.current.pop();
     setCanUndo(undoStack.current.length > 0);
+
     if (previous) {
       collageRef.current = previous;
       setCollage(previous);
@@ -88,6 +92,7 @@ export function useEditor() {
     } catch {
       // Housekeeping must never block starting a collage.
     }
+
     const base = emptyCollage(`c-${Date.now()}`);
     const ranked = rank(base, nextPhotos);
     suggestions.current = ranked;
@@ -95,10 +100,17 @@ export function useEditor() {
     undoStack.current = [];
     setCanUndo(false);
     setPhotos(nextPhotos);
-    collageRef.current =
-      ranked.length > 0
-        ? { ...base, layers: layersFrom(ranked[0], nextPhotos.map((p) => p.id)) }
-        : base;
+    const [first] = ranked;
+
+    collageRef.current = first
+      ? {
+          ...base,
+          layers: layersFrom(
+            first,
+            nextPhotos.map((p) => p.id),
+          ),
+        }
+      : base;
     setCollage(collageRef.current);
   }, []);
 
@@ -106,10 +118,20 @@ export function useEditor() {
   const shuffle = useCallback(() => {
     apply((current) => {
       if (suggestions.current.length === 0) suggestions.current = rank(current, photos);
+
       if (suggestions.current.length === 0) return current;
       suggestionIndex.current = (suggestionIndex.current + 1) % suggestions.current.length;
       const next = suggestions.current[suggestionIndex.current];
-      return { ...current, layers: layersFrom(next, photos.map((p) => p.id)) };
+
+      if (!next) return current;
+
+      return {
+        ...current,
+        layers: layersFrom(
+          next,
+          photos.map((p) => p.id),
+        ),
+      };
     });
   }, [apply, photos]);
 
@@ -137,9 +159,10 @@ function rank(collage: Collage, photos: Photo[]): Suggestion[] {
   if (photos.length === 0) return [];
   const canvas = canvasSize(collage);
   const content = contentRect(collage, canvas);
+
   return suggestLayouts(
     photos.map((p) => p.width / p.height),
     content.w / content.h,
-    { overlapping: collage.border > 0 }
+    { overlapping: collage.border > 0 },
   );
 }
