@@ -41,12 +41,15 @@ export async function shareToInstagramStory(
   const contentUri = await getContentUriAsync(fileUri);
 
   try {
-    await IntentLauncher.startActivityAsync(ADD_TO_STORY, {
+    const params: IntentLauncher.IntentLauncherParams = {
       data: contentUri,
       type: "image/jpeg",
       flags: FLAG_GRANT_READ_URI_PERMISSION,
-      ...(sourceApplication ? { extra: { source_application: sourceApplication } } : {}),
-    });
+    };
+
+    if (sourceApplication) params.extra = { source_application: sourceApplication };
+
+    await IntentLauncher.startActivityAsync(ADD_TO_STORY, params);
 
     return "opened";
   } catch {

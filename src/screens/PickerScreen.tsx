@@ -37,7 +37,9 @@ const PAGE = 120;
 /** Above this the layout generator falls back to a plain grid, so we stop here. */
 const MAX_SELECTION = 9;
 
-type Range = "all" | "today" | "week";
+const RANGES = ["all", "today", "week"] as const;
+
+type Range = (typeof RANGES)[number];
 
 const RANGE_LABELS: Record<Range, string> = {
   all: "Alle",
@@ -143,7 +145,7 @@ export function PickerScreen({
       <View style={styles.header}>
         <Text style={styles.title}>Schnipsel</Text>
         <View style={styles.chips}>
-          {(Object.keys(RANGE_LABELS) as Range[]).map((key) => (
+          {RANGES.map((key) => (
             <Chip
               key={key}
               label={RANGE_LABELS[key]}

@@ -16,7 +16,6 @@ import { runOnJS, useSharedValue } from "react-native-reanimated";
 import { swapPhotos, type Collage, type Layer, type Photo } from "../model/collage";
 import {
   borderWidth,
-  canvasSize,
   clampCrop,
   contentRect,
   fitCanvas,
@@ -447,6 +446,7 @@ export function EditorScreen({
                 size={preview}
                 live={live}
                 selectedId={selected?.id ?? null}
+                swap={swap ?? undefined}
                 showSafeZone={showSafeZone}
               />
             </Canvas>

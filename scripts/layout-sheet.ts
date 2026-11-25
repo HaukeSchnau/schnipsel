@@ -27,8 +27,12 @@ const SCALE = 0.15;
 const INK = ["#c2643f", "#7d8c5c", "#4a6b7c", "#b08442", "#8a6a86", "#6b7f6b"];
 const PAPER = "#FBF8F2";
 
+const ink = (i: number) => INK[i % INK.length] ?? PAPER;
+
 function layersFromRecipe(recipeId: string): Layer[] {
-  const recipe = RECIPES.find((r) => r.id === recipeId)!;
+  const recipe = RECIPES.find((r) => r.id === recipeId);
+
+  if (!recipe) throw new Error(`No recipe ${recipeId}`);
 
   return recipe.slots.map((slot, i) => ({
     id: `${recipeId}:${i}`,
@@ -74,8 +78,8 @@ function svg(collage: Collage, labels?: string[]): string {
       const label = labels?.[i] ?? String(i + 1);
 
       return `<g transform="rotate(${angle.toFixed(2)} ${cx.toFixed(1)} ${cy.toFixed(1)})">
-        ${bd > 0 ? box(card, PAPER, radius, filter) : sh.opacity > 0 ? box(card, INK[i % INK.length], radius, filter) : ""}
-        ${box(inner, INK[i % INK.length], Math.max(0, radius - bd))}
+        ${bd > 0 ? box(card, PAPER, radius, filter) : sh.opacity > 0 ? box(card, ink(i), radius, filter) : ""}
+        ${box(inner, ink(i), Math.max(0, radius - bd))}
         <text x="${cx.toFixed(1)}" y="${(cy + 4).toFixed(1)}" text-anchor="middle"
               font-family="system-ui" font-size="11" fill="#fff" opacity="0.85">${label}</text>
       </g>`;
@@ -114,6 +118,8 @@ function collageForMix(aspects: number[], style: StyleName): Collage {
     overlapping: base.border > 0,
   })[0];
 
+  if (!best) throw new Error(`No layout for ${aspects.length} photos`);
+
   return {
     ...base,
     layers: layersFrom(
@@ -137,8 +143,10 @@ const mixSections = MIXES.map(({ label, aspects }) => {
   const content = contentRect(collage, STORY);
   const best = suggestLayouts(aspects, content.w / content.h)[0];
 
+  if (!best) throw new Error(`No layout for ${label}`);
+
   const labels = best.assignment.map((photoIndex) => {
-    const a = aspects[photoIndex];
+    const a = aspects[photoIndex] ?? 1;
 
     return a > 1.2 ? "quer" : a < 0.85 ? "hoch" : "1:1";
   });

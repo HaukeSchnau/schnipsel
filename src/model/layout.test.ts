@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vite-plus/test";
+import { assert, describe, expect, test } from "vite-plus/test";
 
 import { RECIPES, layersFrom, suggestLayouts } from "./layout";
 
@@ -45,21 +45,23 @@ describe("suggestLayouts", () => {
     // 2/big-top would fit one of them beautifully and crop the other hard.
     // Squaring the per-slot cost is what keeps that from winning on total.
     const best = suggestLayouts([16 / 9, 16 / 9], STORY)[0];
-    expect(best.recipe.id).toBe("2/stack");
+    expect(best?.recipe.id).toBe("2/stack");
   });
 
   test("slot shapes are judged against the canvas, not in the abstract", () => {
     // Side by side on a 9:16 story means two very tall strips, which crops a
     // portrait photo more than stacking does. On a square canvas it doesn't.
-    expect(suggestLayouts([2 / 3, 2 / 3], STORY)[0].recipe.id).toBe("2/stack");
-    expect(suggestLayouts([2 / 3, 2 / 3], 1)[0].recipe.id).toBe("2/side");
+    expect(suggestLayouts([2 / 3, 2 / 3], STORY)[0]?.recipe.id).toBe("2/stack");
+    expect(suggestLayouts([2 / 3, 2 / 3], 1)[0]?.recipe.id).toBe("2/side");
   });
 
   test("the landscape photo gets the wide slot, whatever order it was tapped in", () => {
     // 3/hero-top has one wide slot on top and two narrower ones underneath.
     const best = suggestLayouts([2 / 3, 16 / 9, 2 / 3], STORY).find(
       (s) => s.recipe.id === "3/hero-top",
-    )!;
+    );
+
+    assert(best);
 
     expect(best.assignment[0]).toBe(1);
   });
@@ -68,8 +70,11 @@ describe("suggestLayouts", () => {
     const all = suggestLayouts([1, 1, 1, 1], STORY);
     expect(all.length).toBeGreaterThan(1);
 
-    for (let i = 1; i < all.length; i++) {
-      expect(all[i].score).toBeGreaterThanOrEqual(all[i - 1].score);
+    let previous = -Infinity;
+
+    for (const suggestion of all) {
+      expect(suggestion.score).toBeGreaterThanOrEqual(previous);
+      previous = suggestion.score;
     }
   });
 
@@ -84,6 +89,7 @@ describe("suggestLayouts", () => {
       const all = suggestLayouts(aspects, STORY);
       const best = all[0];
       const cheapest = [...all].sort((a, b) => a.cropCost - b.cropCost)[0];
+      assert(best && cheapest);
       // The winner may differ from the pure-crop optimum, but only barely.
       expect(best.cropCost - cheapest.cropCost).toBeLessThan(0.15);
     }
@@ -91,13 +97,15 @@ describe("suggestLayouts", () => {
 
   test("counts without a hand-made recipe fall back to a grid", () => {
     const best = suggestLayouts([1, 1, 1, 1, 1, 1, 1], STORY)[0];
-    expect(best.recipe.slots.length).toBe(7);
+    expect(best?.recipe.slots.length).toBe(7);
   });
 
   test("layers come out in slot order, carrying the assigned photo", () => {
     const best = suggestLayouts([2 / 3, 16 / 9, 2 / 3], STORY).find(
       (s) => s.recipe.id === "3/hero-top",
-    )!;
+    );
+
+    assert(best);
 
     const layers = layersFrom(best, ["a", "b", "c"]);
     expect(layers.map((l) => l.photoId)).toEqual(["b", "a", "c"]);

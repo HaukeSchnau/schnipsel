@@ -18,7 +18,8 @@ import { theme } from "./src/ui/theme";
 export default function App() {
   const editor = useEditor();
   const [picking, setPicking] = useState(false);
-  const hasCollage = !!editor.collage && editor.collage.layers.length > 0;
+  // A collage worth editing: one with at least one photo on it.
+  const collage = editor.collage && editor.collage.layers.length > 0 ? editor.collage : null;
 
   return (
     <GestureHandlerRootView style={styles.root}>
@@ -29,17 +30,17 @@ export default function App() {
             <View style={styles.splash}>
               <ActivityIndicator color={theme.accent} />
             </View>
-          ) : picking || !hasCollage ? (
+          ) : picking || !collage ? (
             <PickerScreen
               onDone={(photos) => {
                 editor.startWith(photos);
                 setPicking(false);
               }}
-              onCancel={hasCollage ? () => setPicking(false) : undefined}
+              onCancel={collage ? () => setPicking(false) : undefined}
             />
           ) : (
             <EditorScreen
-              collage={editor.collage!}
+              collage={collage}
               photos={editor.photos}
               photosById={editor.photosById}
               canUndo={editor.canUndo}

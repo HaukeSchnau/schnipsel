@@ -100,16 +100,17 @@ export function useEditor() {
     undoStack.current = [];
     setCanUndo(false);
     setPhotos(nextPhotos);
-    collageRef.current =
-      ranked.length > 0
-        ? {
-            ...base,
-            layers: layersFrom(
-              ranked[0],
-              nextPhotos.map((p) => p.id),
-            ),
-          }
-        : base;
+    const [first] = ranked;
+
+    collageRef.current = first
+      ? {
+          ...base,
+          layers: layersFrom(
+            first,
+            nextPhotos.map((p) => p.id),
+          ),
+        }
+      : base;
     setCollage(collageRef.current);
   }, []);
 
@@ -121,6 +122,8 @@ export function useEditor() {
       if (suggestions.current.length === 0) return current;
       suggestionIndex.current = (suggestionIndex.current + 1) % suggestions.current.length;
       const next = suggestions.current[suggestionIndex.current];
+
+      if (!next) return current;
 
       return {
         ...current,

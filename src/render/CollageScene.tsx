@@ -72,7 +72,6 @@ export type CollageSceneProps = {
 
 export function CollageScene({
   collage,
-  photos,
   images,
   size,
   live,
@@ -184,7 +183,7 @@ function LayerMarker({
   const content = contentRect(collage, size);
   const box = layerRect(layer.frame, content, gutter(collage, size));
   const radius = cornerRadius(collage.radius, box);
-  const shape = rrect(rect(box.x, box.y, box.w, box.h), radius, radius);
+  const outline = rrect(rect(box.x, box.y, box.w, box.h), radius, radius);
 
   const transform: Transforms3d = [
     { rotate: (layerAngle(layer, collage.scatter) * Math.PI) / 180 },
@@ -195,9 +194,9 @@ function LayerMarker({
 
   return (
     <Group transform={transform} origin={origin}>
-      {kind === "target" ? <RoundedRect rect={shape} color="rgba(247,231,206,0.3)" /> : null}
+      {kind === "target" ? <RoundedRect rect={outline} color="rgba(247,231,206,0.3)" /> : null}
       <RoundedRect
-        rect={shape}
+        rect={outline}
         style="stroke"
         strokeWidth={stroke}
         color={kind === "source" ? "rgba(247,231,206,0.55)" : "#F7E7CE"}

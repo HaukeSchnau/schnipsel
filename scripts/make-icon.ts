@@ -68,7 +68,11 @@ function colourScene(prints: Print[], border: number): string {
     .map(
       (p, i) =>
         rect(p, 0, PAPER, ' filter="url(#drop)"') +
-        rect({ ...p, w: p.w - border * 2, h: p.h - border * 2 }, 0, PHOTO[i % PHOTO.length]),
+        rect(
+          { ...p, w: p.w - border * 2, h: p.h - border * 2 },
+          0,
+          PHOTO[i % PHOTO.length] ?? PAPER,
+        ),
     )
     .join("\n");
 }

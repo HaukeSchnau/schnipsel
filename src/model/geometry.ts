@@ -214,6 +214,8 @@ export function pickAt(boxes: HitBox[], px: number, py: number): string | null {
 
   for (let i = boxes.length - 1; i >= 0; i--) {
     const b = boxes[i];
+
+    if (!b) continue;
     const dx = px - b.cx;
     const dy = py - b.cy;
     const lx = dx * b.cos + dy * b.sin;

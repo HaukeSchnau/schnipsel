@@ -39,7 +39,7 @@ export function useSkImages(photos: Photo[]): ImageMap {
       return;
     }
 
-    Promise.all(
+    void Promise.all(
       missing.map(async (photo) => {
         const image = await loadSkImage(photo.uri);
 

@@ -25,8 +25,8 @@ describe("swapPhotos", () => {
 
   test("the crop travels with its photo", () => {
     const next = swapPhotos(base, "a", "c");
-    expect(next.layers[2].crop.scale).toBe(2);
-    expect(next.layers[0].crop.scale).toBe(1);
+    expect(next.layers[2]?.crop.scale).toBe(2);
+    expect(next.layers[0]?.crop.scale).toBe(1);
   });
 
   test("swapping a layer with itself or with a stranger changes nothing", () => {

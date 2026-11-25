@@ -62,20 +62,43 @@ const grid = (columnCount: number, rowCount: number): Rect[] =>
     cols(band, ...Array(columnCount).fill(1)),
   );
 
-/** Builds a recipe from a band split, e.g. `stacked([52, 48], [1, 2])`. */
-function stacked(weights: number[], perBand: number[]): Rect[] {
-  return rows(UNIT, ...weights).flatMap((band, i) =>
-    perBand[i] === 1 ? [band] : cols(band, ...Array(perBand[i]).fill(1)),
-  );
+/**
+ * Builds a recipe from bands of `[weight, frames]`, e.g. `stacked([52, 1], [48, 2])`: a band of
+ * weight 52 with one frame over a band of 48 split into two.
+ */
+function stacked(...bands: [weight: number, frames: number][]): Rect[] {
+  return rows(UNIT, ...bands.map(([weight]) => weight)).flatMap((band, i) => {
+    const frames = nth(bands, i)[1];
+
+    return frames === 1 ? [band] : cols(band, ...Array(frames).fill(1));
+  });
+}
+
+/** A split into exactly two, as a pair. */
+function halves(split: Rect[]): [Rect, Rect] {
+  const [first, second] = split;
+
+  if (!first || !second) throw new Error("Expected a split into two");
+
+  return [first, second];
+}
+
+/** `items[i]` where the layout search guarantees it: an order is a permutation of the slots. */
+function nth<T>(items: readonly T[], i: number): T {
+  const item = items[i];
+
+  if (item === undefined) throw new Error(`No item at ${i}`);
+
+  return item;
 }
 
 export const RECIPES: Recipe[] = (() => {
   const two = rows(UNIT, 62, 38);
   const twoLow = rows(UNIT, 38, 62);
-  const leftHeavy = cols(UNIT, 62, 38);
-  const rightHeavy = cols(UNIT, 38, 62);
-  const leftHeavy4 = cols(UNIT, 58, 42);
-  const leftHeavy5 = cols(UNIT, 55, 45);
+  const leftHeavy = halves(cols(UNIT, 62, 38));
+  const rightHeavy = halves(cols(UNIT, 38, 62));
+  const leftHeavy4 = halves(cols(UNIT, 58, 42));
+  const leftHeavy5 = halves(cols(UNIT, 55, 45));
 
   return [
     { id: "1/full", slots: [UNIT] },
@@ -87,8 +110,8 @@ export const RECIPES: Recipe[] = (() => {
 
     { id: "3/rows", slots: rows(UNIT, 1, 1, 1) },
     { id: "3/band", slots: rows(UNIT, 30, 40, 30) },
-    { id: "3/hero-top", slots: stacked([52, 48], [1, 2]) },
-    { id: "3/hero-bottom", slots: stacked([48, 52], [2, 1]) },
+    { id: "3/hero-top", slots: stacked([52, 1], [48, 2]) },
+    { id: "3/hero-bottom", slots: stacked([48, 2], [52, 1]) },
     {
       id: "3/hero-left",
       slots: [leftHeavy[0], ...rows(leftHeavy[1], 1, 1)],
@@ -100,18 +123,18 @@ export const RECIPES: Recipe[] = (() => {
 
     { id: "4/quad", slots: grid(2, 2) },
     { id: "4/rows", slots: rows(UNIT, 1, 1, 1, 1) },
-    { id: "4/hero-top", slots: stacked([46, 54], [1, 3]) },
-    { id: "4/hero-bottom", slots: stacked([54, 46], [3, 1]) },
-    { id: "4/sandwich", slots: stacked([38, 26, 36], [1, 2, 1]) },
+    { id: "4/hero-top", slots: stacked([46, 1], [54, 3]) },
+    { id: "4/hero-bottom", slots: stacked([54, 3], [46, 1]) },
+    { id: "4/sandwich", slots: stacked([38, 1], [26, 2], [36, 1]) },
     {
       id: "4/hero-left",
       slots: [leftHeavy4[0], ...rows(leftHeavy4[1], 1, 1, 1)],
     },
 
-    { id: "5/2-3", slots: stacked([48, 52], [2, 3]) },
-    { id: "5/3-2", slots: stacked([52, 48], [3, 2]) },
-    { id: "5/hero-top", slots: stacked([42, 29, 29], [1, 2, 2]) },
-    { id: "5/hero-bottom", slots: stacked([29, 29, 42], [2, 2, 1]) },
+    { id: "5/2-3", slots: stacked([48, 2], [52, 3]) },
+    { id: "5/3-2", slots: stacked([52, 3], [48, 2]) },
+    { id: "5/hero-top", slots: stacked([42, 1], [29, 2], [29, 2]) },
+    { id: "5/hero-bottom", slots: stacked([29, 2], [29, 2], [42, 1]) },
     {
       id: "5/hero-left",
       slots: [leftHeavy5[0], ...rows(leftHeavy5[1], 1, 1).flatMap((band) => cols(band, 1, 1))],
@@ -119,9 +142,9 @@ export const RECIPES: Recipe[] = (() => {
 
     { id: "6/2x3", slots: grid(2, 3) },
     { id: "6/3x2", slots: grid(3, 2) },
-    { id: "6/1-2-3", slots: stacked([34, 33, 33], [1, 2, 3]) },
-    { id: "6/3-2-1", slots: stacked([33, 33, 34], [3, 2, 1]) },
-    { id: "6/hero-top", slots: stacked([40, 30, 30], [1, 2, 3]) },
+    { id: "6/1-2-3", slots: stacked([34, 1], [33, 2], [33, 3]) },
+    { id: "6/3-2-1", slots: stacked([33, 3], [33, 2], [34, 1]) },
+    { id: "6/hero-top", slots: stacked([40, 1], [30, 2], [30, 3]) },
 
     // Prints laid on top of one another. These need `overlapping` styling to
     // make any sense — see the flag's docs.
@@ -220,8 +243,8 @@ function permutations(n: number): number[][] {
       return;
     }
 
-    for (let i = 0; i < rest.length; i++) {
-      walk([...prefix, rest[i]], [...rest.slice(0, i), ...rest.slice(i + 1)]);
+    for (const [i, item] of rest.entries()) {
+      walk([...prefix, item], [...rest.slice(0, i), ...rest.slice(i + 1)]);
     }
   };
 
@@ -277,7 +300,8 @@ export function suggestLayouts(
     for (const order of orders) {
       let cropCost = 0;
 
-      for (let i = 0; i < count; i++) cropCost += mismatch(photoAspects[order[i]], slotAspects[i]);
+      for (let i = 0; i < count; i++)
+        cropCost += mismatch(nth(photoAspects, nth(order, i)), nth(slotAspects, i));
 
       if (!best || cropCost < best.cropCost) {
         best = { recipe, assignment: order, cropCost, score: cropCost - bonus };
@@ -292,7 +316,7 @@ export function suggestLayouts(
 
 export function layersFrom(suggestion: Suggestion, photoIds: string[]): Layer[] {
   return suggestion.recipe.slots.map((slot, i) => {
-    const photoId = photoIds[suggestion.assignment[i]];
+    const photoId = nth(photoIds, nth(suggestion.assignment, i));
 
     return {
       id: `${suggestion.recipe.id}:${i}:${photoId}`,
