@@ -12,6 +12,7 @@
         "expo-haptics": "~57.0.1",
         "expo-image": "~57.0.3",
         "expo-image-manipulator": "~57.0.12",
+        "expo-image-picker": "~57.0.22",
         "expo-intent-launcher": "~57.0.1",
         "expo-media-library": "~57.0.4",
         "expo-splash-screen": "~57.0.7",
@@ -680,6 +681,8 @@
     "expo-image-loader": ["expo-image-loader@57.0.1", "", { "peerDependencies": { "expo": "*" } }, "sha512-uhrZKLT/cTl2mXyR28kPpVkS5O+PK9N1QA/07IFM4f5T4g0lTW1JHT3NEWwEEsGFldPmVX4j7LwUVVZxE+woug=="],
 
     "expo-image-manipulator": ["expo-image-manipulator@57.0.12", "", { "dependencies": { "expo-image-loader": "~57.0.1" }, "peerDependencies": { "expo": "*" } }, "sha512-B5YsNc368S9fJJjGr4w/BOmJfQw3xNYddkOhRE5KTttOWDy11SQMme3JpxuTZbM3UTINrsFGUz/Uu3FwfptLPA=="],
+
+    "expo-image-picker": ["expo-image-picker@57.0.22", "", { "dependencies": { "expo-image-loader": "~57.0.1" }, "peerDependencies": { "expo": "*" } }, "sha512-MSc6fK3V+1JXyricu/bbd5yfydiV8KApP1Zn2XUI+OqbPp28l9DNkqcrNkmD78ZmFBSQcCU0nPh8hqpcVOUgRQ=="],
 
     "expo-intent-launcher": ["expo-intent-launcher@57.0.1", "", { "peerDependencies": { "expo": "*" } }, "sha512-BYiPEOUeW3AkW/uxEESbS2UBw9LasJ8Heb6A8kF9Ueh6pqrXQHMNJFHzfrOP8qZfv9G2e8CTzrtzpN5p0vH5fA=="],
 
