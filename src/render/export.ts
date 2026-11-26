@@ -51,8 +51,9 @@ export async function renderCollage(
  * lands in the gallery regardless of where it goes next.
  */
 export async function saveToGallery(fileUri: string): Promise<void> {
-  // Android 11 and later add to MediaStore without a permission. iOS asks for
-  // add-only access, which reads nothing from the library.
+  // Android adds to MediaStore without a permission from Android 11 on, which
+  // is why that is the app's minimum. iOS asks for add-only access, which
+  // reads nothing from the library.
   if (Platform.OS === "ios") await requestPermissionsAsync(true);
   await Asset.create(fileUri);
 }
