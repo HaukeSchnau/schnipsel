@@ -29,6 +29,7 @@ import {
 import { importPhotos } from "../photos/import";
 import type { Photo } from "../model/collage";
 import { Button, Chip } from "../ui/controls";
+import { PrivacyLink } from "../ui/PrivacyLink";
 import { theme } from "../ui/theme";
 
 const COLUMNS = 3;
@@ -136,6 +137,7 @@ export function PickerScreen({
           Schnipsel braucht Zugriff auf deine Fotos, um Collagen daraus zu bauen.
         </Text>
         <Button label="Fotos freigeben" tone="primary" onPress={() => requestPermission()} />
+        <PrivacyLink />
       </Centered>
     );
   }
@@ -143,7 +145,10 @@ export function PickerScreen({
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.title}>Schnipsel</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Schnipsel</Text>
+          <PrivacyLink />
+        </View>
         <View style={styles.chips}>
           {RANGES.map((key) => (
             <Chip
@@ -221,6 +226,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 32 },
   explain: { color: theme.textDim, fontSize: 15, textAlign: "center", lineHeight: 22 },
   header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, gap: 12 },
+  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: { color: theme.text, fontSize: 26, fontWeight: "700" },
   chips: { flexDirection: "row", gap: 8 },
   badge: {
