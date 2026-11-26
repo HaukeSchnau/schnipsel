@@ -14,9 +14,10 @@ Hamburg, HRB 185737, E-Mail: info@urbs.one.
 Alles geschieht auf Ihrem Gerät. Die App hat keinen Server und keine Benutzerkonten. Sie
 sendet keine Daten an uns oder an Dritte.
 
-- Fotos: Nach Ihrer Erlaubnis zeigt die App die Fotos Ihrer Mediathek zur Auswahl. Von den
-  Fotos, die Sie auswählen, legt sie verkleinerte Kopien im eigenen Speicher ab, dazu einen
-  Entwurf Ihrer Collage. Metadaten wie der Aufnahmeort werden dabei nicht übernommen.
+- Fotos: Sie wählen Fotos über die Fotoauswahl von Android aus. Die App erhält nur die Fotos,
+  die Sie dort auswählen, und keinen Zugriff auf Ihre übrige Mediathek. Von diesen Fotos legt
+  sie verkleinerte Kopien im eigenen Speicher ab, dazu einen Entwurf Ihrer Collage. Metadaten
+  wie der Aufnahmeort werden dabei nicht übernommen.
 - Fertige Collage: Die App speichert sie in Ihrer Mediathek.
 - Instagram: Nur wenn Sie „Zu Instagram" tippen, übergibt Android das fertige Collagenbild an
   die Instagram-App. Ab dann gilt die Datenschutzerklärung von Instagram (Meta).
@@ -53,9 +54,10 @@ Last updated: 26 November 2026
    Hamburg, Germany, represented by its managing director Hauke Schnau, Amtsgericht Hamburg
    HRB 185737, info@urbs.one.
 2. **Data processed.** Everything happens on your device. The app has no server and no
-   accounts, and it sends no data to us or to third parties. With your permission it shows your
-   photo library; it keeps downscaled copies of the photos you pick and a draft of your collage
-   in its own storage, without metadata such as location. It saves the finished collage to your
+   accounts, and it sends no data to us or to third parties. You pick photos through Android's
+   photo picker; the app receives only the photos you pick there and has no access to the rest
+   of your library. It keeps downscaled copies of those photos and a draft of your collage in
+   its own storage, without metadata such as location. It saves the finished collage to your
    photo library. Only when you tap "Zu Instagram" does Android hand the finished collage image
    to the Instagram app, whose privacy policy then applies. No ads, analytics or crash reporting.
 3. **Retention and deletion.** The app deletes the photo copies when you start a new collage.

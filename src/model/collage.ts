@@ -77,7 +77,7 @@ export type Collage = {
 
 /** A photo the app has taken ownership of: downscaled and stored locally. */
 export type Photo = {
-  /** MediaLibrary asset id. On Android this is a `content://` URI. */
+  /** Unique per import. Drafts from before the system picker hold MediaLibrary asset ids. */
   id: string;
   /** Working copy in document storage — capped resolution, see photos/import.ts. */
   uri: string;

@@ -7,8 +7,11 @@
  * 1440px on the long edge is well above what a single tile of a 1080px-wide
  * collage can show, so this costs nothing visually — it just means the editor
  * and the export share one modest set of files.
+ *
+ * The system picker hands over full-size copies in the cache, metadata and
+ * all. The privacy policy promises downscaled copies without metadata, so
+ * those copies are deleted as soon as the working copies exist.
  */
-import { Asset } from "expo-media-library";
 import { Directory, File, Paths } from "expo-file-system";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 
@@ -26,7 +29,10 @@ function ensureDir() {
   if (!photosDir.exists) photosDir.create({ intermediates: true, idempotent: true });
 }
 
-/** Filesystem-safe, stable key for an asset id (which is a content:// URI on Android). */
+/**
+ * Filesystem-safe, stable key for a photo id. Drafts saved before the system
+ * picker use MediaLibrary asset ids, which are content:// URIs on Android.
+ */
 function keyFor(assetId: string): string {
   let h = 0x811c9dc5;
 
@@ -54,50 +60,49 @@ async function renderTo(
   return dimensions;
 }
 
-export type PickedAsset = { id: string; width: number; height: number };
+export type PickedPhoto = { uri: string; width: number; height: number };
 
 /**
- * Imports the picked assets, reusing working copies from earlier sessions.
- * Order is preserved — the picker's tap order is what layouts fill slots with.
+ * Imports the picked photos in the order the picker returned them, which is
+ * the order layouts fill their slots with.
  */
-export async function importPhotos(assets: PickedAsset[]): Promise<Photo[]> {
+export async function importPhotos(picked: PickedPhoto[]): Promise<Photo[]> {
   ensureDir();
+  const batch = Date.now().toString(36);
   const out: Photo[] = [];
 
-  for (const asset of assets) {
-    const key = keyFor(asset.id);
-    const work = new File(photosDir, `${key}.jpg`);
-    const swatch = new File(photosDir, `${key}.swatch.jpg`);
+  try {
+    for (const [index, photo] of picked.entries()) {
+      const id = `${batch}-${index}`;
+      const work = new File(photosDir, `${keyFor(id)}.jpg`);
+      const swatch = new File(photosDir, `${keyFor(id)}.swatch.jpg`);
+      const landscape = photo.width >= photo.height;
+      const size = landscape ? { width: WORK_MAX } : { height: WORK_MAX };
+      const dimensions = await renderTo(photo.uri, work, size, 0.92);
+      await renderTo(
+        work.uri,
+        swatch,
+        landscape ? { width: SWATCH_MAX } : { height: SWATCH_MAX },
+        0.8,
+      );
 
-    if (work.exists && swatch.exists) {
-      // Dimensions come from the media store, so a cached copy needs no decode.
-      const landscape = asset.width >= asset.height;
-      const scale = Math.min(1, WORK_MAX / Math.max(asset.width, asset.height));
-      out.push({
-        id: asset.id,
-        uri: work.uri,
-        width: Math.round(asset.width * scale) || (landscape ? WORK_MAX : 1),
-        height: Math.round(asset.height * scale) || (landscape ? 1 : WORK_MAX),
-        swatchUri: swatch.uri,
-      });
-      continue;
+      out.push({ id, uri: work.uri, ...dimensions, swatchUri: swatch.uri });
     }
-
-    const sourceUri = await new Asset(asset.id).getUri();
-    const landscape = asset.width >= asset.height;
-    const size = landscape ? { width: WORK_MAX } : { height: WORK_MAX };
-    const dimensions = await renderTo(sourceUri, work, size, 0.92);
-    await renderTo(
-      work.uri,
-      swatch,
-      landscape ? { width: SWATCH_MAX } : { height: SWATCH_MAX },
-      0.8,
-    );
-
-    out.push({ id: asset.id, uri: work.uri, ...dimensions, swatchUri: swatch.uri });
+  } finally {
+    for (const photo of picked) discard(photo.uri);
   }
 
   return out;
+}
+
+function discard(uri: string) {
+  try {
+    const file = new File(uri);
+
+    if (file.exists) file.delete();
+  } catch {
+    // The cache is the OS's to clear if this fails; the import must not.
+  }
 }
 
 /** Drops working copies that no collage or draft refers to any more. */

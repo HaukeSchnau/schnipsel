@@ -10,9 +10,10 @@
  * sticker layer instead of a background — see notes/schnipsel.md.)
  */
 import { createElement } from "react";
+import { Platform } from "react-native";
 import { drawAsImage, ImageFormat } from "@shopify/react-native-skia";
 import { File, Paths } from "expo-file-system";
-import { Asset } from "expo-media-library";
+import { Asset, requestPermissionsAsync } from "expo-media-library";
 
 import { CollageScene } from "./CollageScene";
 import { canvasSize } from "../model/geometry";
@@ -50,5 +51,9 @@ export async function renderCollage(
  * lands in the gallery regardless of where it goes next.
  */
 export async function saveToGallery(fileUri: string): Promise<void> {
+  // Android adds to MediaStore without a permission from Android 11 on, which
+  // is why that is the app's minimum. iOS asks for add-only access, which
+  // reads nothing from the library.
+  if (Platform.OS === "ios") await requestPermissionsAsync(true);
   await Asset.create(fileUri);
 }
